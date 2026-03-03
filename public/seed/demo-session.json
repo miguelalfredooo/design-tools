@@ -1,0 +1,32 @@
+[
+  {
+    "id": "demo-session-invite-banner",
+    "title": "Invite Banner Animation",
+    "description": "Which animation approach works best for the Invite Friends banner? Three explorations: an attention-grabbing glow, a decorative border draw, and a subtle shimmer.",
+    "previewUrl": "/preview/animations",
+    "participantCount": 0,
+    "options": [
+      {
+        "id": "demo-option-glow",
+        "title": "Glow Pulse",
+        "description": "Attention loop - pulsing shadow glow radiating from the banner, repeats 3 times over 2s to draw the eye without being intrusive.",
+        "imageUrl": "/banner-preview.png"
+      },
+      {
+        "id": "demo-option-border",
+        "title": "Border Draw",
+        "description": "Delight - spinning conic gradient border in blue tones that traces the banner perimeter, with fade-in/out transitions.",
+        "imageUrl": "/banner-preview.png"
+      },
+      {
+        "id": "demo-option-shimmer",
+        "title": "Shimmer Sweep",
+        "description": "Delight - horizontal light sweep across the banner using a white gradient overlay, left to right.",
+        "imageUrl": "/banner-preview.png"
+      }
+    ],
+    "votes": [],
+    "phase": "setup",
+    "createdAt": 1761177600000
+  }
+]

@@ -1,0 +1,154 @@
+/*
+ * Banner component styles — preserved from community platform.
+ * DO NOT modify these values; they match the production component.
+ */
+.banner {
+  --bg-banner: #DBEAFE;
+  --bg-icon: #DBEAFE;
+  --icon-color: #1E3A8A;
+  --text-primary: #000000;
+  --text-secondary: #000000;
+  --btn-bg: #fff;
+  --btn-border: #E9E9EA;
+  --radius-banner: 8px;
+  --radius-icon: 32px;
+  --radius-btn: 16px;
+
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-banner);
+  border-radius: var(--radius-banner);
+  padding: 12px 16px;
+  width: 100%;
+  max-width: 489px;
+}
+
+.banner .banner-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-icon);
+  border-radius: var(--radius-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon-color);
+}
+.banner .banner-icon svg { width: 20px; height: 16px; }
+
+.banner .banner-copy { flex: 1; min-width: 0; }
+.banner .banner-copy .banner-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.banner .banner-copy .banner-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.banner .banner-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-btn);
+  padding: 4px 12px;
+  height: 28px;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.banner .banner-btn svg { width: 16px; height: 14px; flex-shrink: 0; }
+.banner .banner-btn:hover { background: #f0f0f0; }
+
+/* ——————————————————————————————
+   ANIMATION DEFINITIONS
+—————————————————————————————— */
+
+/* 1 — Glow Pulse */
+.anim-glow .banner {
+  box-shadow: 0 0 0 0 rgba(30, 58, 138, 0);
+}
+.anim-glow.playing .banner {
+  animation: glowPulse 2s ease-in-out 3;
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(30, 58, 138, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(30, 58, 138, 0.15), 0 0 20px rgba(30, 58, 138, 0.08); }
+}
+
+/* 2 — Border Draw */
+.anim-border-draw .banner {
+  position: relative;
+  z-index: 0;
+}
+.anim-border-draw .banner::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 9.5px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    #1E3A8A, #3B82F6, #93C5FD, #3B82F6, #1E3A8A
+  );
+  z-index: -1;
+  opacity: 0;
+}
+.anim-border-draw .banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-banner);
+  background: var(--bg-banner);
+  z-index: -1;
+}
+.anim-border-draw.playing .banner::before {
+  animation: borderFadeIn 0.3s ease-out forwards, borderSpin 0.8s linear 0.15s 2, borderFadeOut 0.4s ease-in 1.75s forwards;
+}
+@keyframes borderFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes borderSpin {
+  to { --border-angle: 360deg; }
+}
+@keyframes borderFadeOut {
+  to { opacity: 0; }
+}
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* 3 — Shimmer Sweep */
+.anim-shimmer .banner {
+  position: relative;
+  overflow: hidden;
+}
+.anim-shimmer .banner::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, #fff 50%, transparent 100%);
+  pointer-events: none;
+}
+.anim-shimmer.playing .banner::after {
+  animation: shimmerSweep 1.2s ease-in-out 0.3s 1;
+}
+@keyframes shimmerSweep {
+  to { left: 100%; }
+}

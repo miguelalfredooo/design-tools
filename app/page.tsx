@@ -1,65 +1,134 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { Suspense, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Layers, Users } from "lucide-react";
+import { useSessions } from "@/lib/design-store";
+import { FeedOptionPost } from "@/components/design/feed-option-post";
+import { EmptySessionState } from "@/components/design/empty-session-state";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import type { ExplorationSession } from "@/lib/design-types";
+
+const phaseLabel: Record<ExplorationSession["phase"], string> = {
+  setup: "Setup",
+  voting: "Voting",
+  revealed: "Results",
+};
+
+function getWinningOptions(session: ExplorationSession) {
+  const counts = new Map<string, number>();
+  for (const vote of session.votes) {
+    counts.set(vote.optionId, (counts.get(vote.optionId) ?? 0) + 1);
+  }
+  const maxVotes = Math.max(0, ...counts.values());
+  if (maxVotes === 0) return session.options;
+  return session.options.filter((o) => counts.get(o.id) === maxVotes);
+}
+
+function DesignHomeFeed() {
+  const { mySessions, allSessions, loading, loadMySessions, loadAllSessions, loadComments } =
+    useSessions();
+  const searchParams = useSearchParams();
+  const activeTab = (searchParams.get("tab") as "home" | "mine" | "all") || "home";
+
+  useEffect(() => {
+    loadMySessions();
+    loadAllSessions();
+  }, [loadMySessions, loadAllSessions]);
+
+  const mySessionIds = new Set(mySessions.map((s) => s.id));
+  const otherSessions = allSessions.filter((s) => !mySessionIds.has(s.id));
+
+  const sessions =
+    activeTab === "mine"
+      ? mySessions
+      : activeTab === "all"
+        ? otherSessions
+        : allSessions;
+
+  useEffect(() => {
+    sessions.forEach((s) => loadComments(s.id));
+  }, [sessions, loadComments]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex justify-center min-w-0 pt-6 pb-12">
+      {loading ? (
+        <p className="text-center text-muted-foreground py-12">
+          Loading sessions...
+        </p>
+      ) : mySessions.length === 0 && allSessions.length === 0 ? (
+        <EmptySessionState />
+      ) : (
+        <div className="w-full max-w-[600px] min-w-0 space-y-10">
+          <h2 className="text-2xl font-black tracking-tight">
+            {activeTab === "mine" ? "My Sessions" : activeTab === "all" ? "All Sessions" : "Home"}
+          </h2>
+          {sessions.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">
+              {activeTab === "mine"
+                ? "No sessions yet. Create one to get started."
+                : activeTab === "all"
+                  ? "No sessions from others yet."
+                  : "No sessions yet. Create one to get started."}
+            </p>
+          ) : (
+            sessions.map((session, idx) => (
+              <div key={session.id}>
+                {idx > 0 && <Separator className="mb-10" />}
+
+                <div className="mb-6 flex items-baseline justify-between gap-4">
+                  <Link
+                    href={`/explorations/${session.id}`}
+                    className="group min-w-0"
+                  >
+                    <h2 className="text-lg font-semibold group-hover:underline truncate">
+                      {session.title}
+                    </h2>
+                  </Link>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground shrink-0">
+                    <Badge variant="secondary">
+                      {phaseLabel[session.phase]}
+                    </Badge>
+                    <span className="flex items-center gap-1">
+                      <Layers className="size-3.5" />
+                      {session.options.length}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="size-3.5" />
+                      {session.voteCount}/{session.participantCount}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {(session.phase === "revealed"
+                    ? getWinningOptions(session)
+                    : session.options
+                  ).map((option) => (
+                    <FeedOptionPost
+                      key={option.id}
+                      option={option}
+                      sessionId={session.id}
+                      phase={session.phase}
+                      isWinner={session.phase === "revealed"}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
     </div>
+  );
+}
+
+export default function DesignHomePage() {
+  return (
+    <Suspense>
+      <DesignHomeFeed />
+    </Suspense>
   );
 }
