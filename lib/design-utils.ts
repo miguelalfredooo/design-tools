@@ -8,6 +8,35 @@ export function generateUUID(): string {
   return crypto.randomUUID();
 }
 
+/** Extract initials from a name/title string (up to 2 characters). */
+export function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+const VOTER_COLORS = [
+  "#3b82f6", // blue
+  "#ef4444", // red
+  "#22c55e", // green
+  "#f59e0b", // amber
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#06b6d4", // cyan
+  "#f97316", // orange
+];
+
+/** Deterministic color for a voter based on their ID. */
+export function getVoterColor(voterId: string): string {
+  let hash = 0;
+  for (let i = 0; i < voterId.length; i++) {
+    hash = ((hash << 5) - hash + voterId.charCodeAt(i)) | 0;
+  }
+  return VOTER_COLORS[Math.abs(hash) % VOTER_COLORS.length];
+}
+
 /**
  * Deterministic shuffle using a seed string (e.g. voterId).
  * Returns a new array with elements shuffled consistently for the same seed.

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSessions } from "@/lib/design-store";
+import { useSessionInsights } from "@/hooks/use-session-insights";
 import { useVoterIdentity } from "@/hooks/use-voter-identity";
 import { useIsCreator } from "@/hooks/use-creator-identity";
 import { seededShuffle } from "@/lib/design-utils";
@@ -26,10 +27,12 @@ import { Badge } from "@/components/ui/badge";
 import { VotingProgress } from "@/components/design/voting-progress";
 import { ResultsReveal } from "@/components/design/results-reveal";
 import { VoterIdentityDialog } from "@/components/design/voter-identity-dialog";
-import { VoteConfirmDialog } from "@/components/design/vote-confirm-dialog";
 import { AddOptionDialog } from "@/components/design/add-option-dialog";
 import { VotingOptionCard } from "@/components/design/voting-option-card";
 import { SessionBrief } from "@/components/design/session-brief";
+import { SuggestOptionDialog } from "@/components/design/suggest-option-dialog";
+import { SynthesizeButton } from "@/components/design/synthesize-button";
+import { SessionInsights } from "@/components/design/session-insights";
 
 export default function ExplorationPage({
   params,
@@ -43,16 +46,19 @@ export default function ExplorationPage({
     loadSession,
     startVoting,
     castVote,
+    undoVote,
+    pinVote,
     resetSession,
     revealResults,
     setParticipantCount,
     deleteSession,
+    loadReactions,
   } = useSessions();
   const { name: voterName, setName: setVoterName, clearName, voterId } = useVoterIdentity();
   const isCreator = useIsCreator(session);
+  const { insights, reload: reloadInsights } = useSessionInsights(id);
 
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingOptionId, setPendingOptionId] = useState<string | null>(null);
   const [showIdentity, setShowIdentity] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -63,10 +69,11 @@ export default function ExplorationPage({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // Load session on mount
+  // Load session and reactions on mount
   useEffect(() => {
     loadSession(id);
-  }, [id, loadSession]);
+    loadReactions(id);
+  }, [id, loadSession, loadReactions]);
 
   if (loading && !session) {
     return (
@@ -116,28 +123,25 @@ export default function ExplorationPage({
       ? seededShuffle(options, voterId)
       : options;
 
-  const selectedOption = options.find((o) => o.id === selectedOptionId);
-
   function handleOptionSelect(optionId: string) {
     if (hasVoted || phase !== "voting") return;
-    setSelectedOptionId(optionId);
     if (!voterName) {
+      setPendingOptionId(optionId);
       setShowIdentity(true);
     } else {
-      setShowConfirm(true);
+      castVoteDirectly(optionId, voterName);
     }
   }
 
-  async function handleConfirmVote(comment: string, effort?: string, impact?: string) {
-    if (!selectedOptionId || !voterName || !session) return;
+  async function castVoteDirectly(optionId: string, name: string, comment?: string) {
+    if (!session) return;
     try {
-      await castVote(session.id, selectedOptionId, voterName, comment || undefined, effort, impact);
+      await castVote(session.id, optionId, name, comment);
       toast.success("Vote cast!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to cast vote");
     }
-    setShowConfirm(false);
-    setSelectedOptionId(null);
+    setPendingOptionId(null);
   }
 
   async function handleStartVoting() {
@@ -185,43 +189,24 @@ export default function ExplorationPage({
   }
 
   return (
-    <div className="pt-6 pb-12">
+    <div>
       {/* Dialogs */}
       <VoterIdentityDialog
         open={showIdentity}
-        onSubmit={(name) => {
+        onSubmit={(name, comment) => {
           setVoterName(name);
           setShowIdentity(false);
-          setShowConfirm(true);
+          if (pendingOptionId) castVoteDirectly(pendingOptionId, name, comment);
         }}
         onCancel={() => {
           setShowIdentity(false);
-          setSelectedOptionId(null);
+          setPendingOptionId(null);
         }}
         existingNames={votes.map((v) => v.voterName)}
       />
 
-      <VoteConfirmDialog
-        open={showConfirm}
-        optionTitle={selectedOption?.title ?? ""}
-        onConfirm={handleConfirmVote}
-        onCancel={() => {
-          setShowConfirm(false);
-          setSelectedOptionId(null);
-        }}
-      />
-
-      {/* Two-column layout: brief left, content right */}
-      <div className="flex gap-8 justify-center mx-auto">
-        {/* Left column — context brief */}
-        <div className="hidden lg:block w-[240px] shrink-0">
-          <div className="sticky top-6">
-            <SessionBrief session={session} />
-          </div>
-        </div>
-
-        {/* Right column — main content */}
-        <div className="flex-1 min-w-0 max-w-[720px]">
+      <div>
+        <div className="min-w-0">
           {/* Toolbar */}
           <div className="flex items-center justify-between mb-4">
             <Button asChild variant="ghost" size="sm" className="-ml-2">
@@ -290,144 +275,183 @@ export default function ExplorationPage({
                         Reset
                       </Button>
                     )}
-                    {phase === "setup" && (
-                      <Button variant="ghost" size="sm" onClick={handleDelete}>
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (window.confirm("Delete this session?")) handleDelete();
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
                   </>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Context brief — mobile only (shown inline when no left column) */}
-          <div className="mb-8 lg:hidden">
-            <SessionBrief session={session} />
+            {/* Context brief accordion — full width */}
+            <div className="mt-4">
+              <SessionBrief session={session} />
+            </div>
           </div>
 
           {/* Voter count - editable by creator in setup */}
-      <div className="mb-8">
-        {phase === "setup" && isCreator ? (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border bg-muted/50 px-4 py-3">
-            <div className="flex items-center gap-3">
-              <Users className="size-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium">
-                How many people are voting?
-              </span>
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: 9 }, (_, i) => i + 2).map((n) => (
-                  <Button
-                    key={n}
-                    variant={participantCount === n ? "default" : "outline"}
-                    size="icon-xs"
-                    onClick={() => setParticipantCount(session.id, n)}
-                    className="w-7 h-7 text-xs tabular-nums"
-                  >
-                    {n}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <Button
-              size="sm"
-              className="w-full sm:w-auto"
-              onClick={handleStartVoting}
-              disabled={options.length < 2}
-            >
-              <Play className="size-4" />
-              Start Voting
-            </Button>
-          </div>
-        ) : phase === "setup" && !isCreator ? (
-          // Voter waiting for voting to start
-          <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-6 justify-center">
-            <Clock className="size-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Waiting for the session creator to start voting...
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Lock className="size-3.5" />
-            <span>
-              {participantCount} {participantCount === 1 ? "voter" : "voters"}
-            </span>
-            {isCreator && (
-              <>
-                <span className="text-border">·</span>
-                <button
-                  className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  onClick={handleReset}
+          <div className="mb-8">
+            {phase === "setup" && isCreator ? (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border bg-muted/50 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Users className="size-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium">
+                    How many people are voting?
+                  </span>
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: 9 }, (_, i) => i + 2).map((n) => (
+                      <Button
+                        key={n}
+                        variant={participantCount === n ? "default" : "outline"}
+                        size="icon-xs"
+                        onClick={() => setParticipantCount(session.id, n)}
+                        className="w-7 h-7 text-xs tabular-nums"
+                      >
+                        {n}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={handleStartVoting}
+                  disabled={options.length < 2}
                 >
-                  <Settings className="size-3" />
-                  Change
-                </button>
-              </>
+                  <Play className="size-4" />
+                  Start Voting
+                </Button>
+              </div>
+            ) : phase === "setup" && !isCreator ? (
+              <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-6 justify-center">
+                <Clock className="size-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Waiting for the session creator to start voting...
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Lock className="size-3.5" />
+                <span>
+                  {participantCount} {participantCount === 1 ? "voter" : "voters"}
+                </span>
+                {isCreator && (
+                  <>
+                    <span className="text-border">·</span>
+                    <button
+                      className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      onClick={handleReset}
+                    >
+                      <Settings className="size-3" />
+                      Change
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Voting progress */}
-      {(phase === "voting" || phase === "revealed") && (
-        <div className="mb-8">
-          <VotingProgress voteCount={voteCount} participantCount={participantCount} />
-          {phase === "voting" && voterName && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Voting as <strong>{voterName}</strong>
-              {hasVoted ? (
-                " — you've already voted"
-              ) : (
-                <>
-                  {" · "}
-                  <button
-                    className="font-medium text-primary hover:underline"
-                    onClick={() => {
-                      clearName();
-                      setShowIdentity(true);
-                    }}
-                  >
-                    Not you?
-                  </button>
-                </>
+          {/* Voting progress */}
+          {(phase === "voting" || phase === "revealed") && (
+            <div className="mb-8">
+              <VotingProgress voteCount={voteCount} participantCount={participantCount} />
+              {phase === "voting" && voterName && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Voting as <strong>{voterName}</strong>
+                  {hasVoted ? (
+                    " -- you've already voted"
+                  ) : (
+                    <>
+                      {" · "}
+                      <button
+                        className="font-medium text-primary hover:underline"
+                        onClick={() => {
+                          clearName();
+                          setShowIdentity(true);
+                        }}
+                      >
+                        Not you?
+                      </button>
+                    </>
+                  )}
+                </p>
               )}
+            </div>
+          )}
+
+          {/* Results */}
+          {phase === "revealed" && (
+            <div className="mb-8">
+              <ResultsReveal
+                session={session}
+                isCreator={isCreator}
+                onPinVote={async (voteId, pinned) => {
+                  try {
+                    await pinVote(session.id, voteId, pinned);
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to pin comment");
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Session Insights */}
+          {phase === "revealed" && (
+            <div className="mb-8">
+              {insights.length > 0 ? (
+                <SessionInsights insights={insights} />
+              ) : isCreator ? (
+                <div className="flex items-center justify-between rounded-lg border border-dashed bg-muted/30 px-4 py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Synthesize voter feedback into actionable insights
+                  </p>
+                  <SynthesizeButton
+                    endpoint={`/api/design/sessions/${session.id}/synthesize`}
+                    variant="outline"
+                    icon="flask"
+                    onComplete={reloadInsights}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Voting instruction */}
+          {phase === "voting" && !hasVoted && (
+            <p className="mb-4 text-sm font-medium text-muted-foreground">
+              Tap an exploration to cast your vote
             </p>
           )}
-        </div>
-      )}
 
-      {/* Results */}
-      {phase === "revealed" && (
-        <div className="mb-8">
-          <ResultsReveal session={session} />
-        </div>
-      )}
-
-      {/* Voting instruction */}
-      {phase === "voting" && !hasVoted && (
-        <p className="mb-4 text-sm font-medium text-muted-foreground">
-          Tap an exploration to cast your vote
-        </p>
-      )}
-
-      {/* Options grid */}
-      {phase !== "setup" || isCreator ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {displayOptions.map((opt) => (
-            <VotingOptionCard
-              key={opt.id}
-              option={opt}
-              phase={phase}
-              isSelected={myVote?.optionId === opt.id}
-              hasVoted={hasVoted}
-              sessionId={session.id}
-              isWinner={winnerIds.has(opt.id)}
-              onVote={() => handleOptionSelect(opt.id)}
-            />
-          ))}
-        </div>
-      ) : null}
+          {/* Options grid */}
+          {phase !== "setup" || isCreator ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {displayOptions.map((opt) => (
+                <VotingOptionCard
+                  key={opt.id}
+                  option={opt}
+                  phase={phase}
+                  isSelected={myVote?.optionId === opt.id}
+                  hasVoted={hasVoted}
+                  sessionId={session.id}
+                  isWinner={winnerIds.has(opt.id)}
+                  isCreator={isCreator}
+                  pinnedComment={votes.find((v) => v.optionId === opt.id && v.pinned && v.comment)}
+                  onVote={() => handleOptionSelect(opt.id)}
+                  onUndoVote={() => undoVote(session.id)}
+                />
+              ))}
+              {phase === "voting" && !isCreator && (
+                <SuggestOptionDialog sessionId={session.id} />
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

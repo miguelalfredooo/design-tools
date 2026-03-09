@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Check, Figma, Heart, MessageCircle, PenLine, Trophy } from "lucide-react";
-import type { ExplorationOption, Phase } from "@/lib/design-types";
+import { Check, Pencil, Pin, Trash2, Trophy } from "lucide-react";
+import type { ExplorationOption, Phase, Vote } from "@/lib/design-types";
 import { cn } from "@/lib/utils";
-import { useSessions } from "@/lib/design-store";
+import { getInitials } from "@/lib/design-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useSessions } from "@/lib/design-store";
+import { OptionMedia } from "@/components/design/option-media";
+import { EditOptionDialog } from "@/components/design/edit-option-dialog";
 
 interface VotingOptionCardProps {
   option: ExplorationOption;
@@ -15,15 +19,10 @@ interface VotingOptionCardProps {
   hasVoted: boolean;
   sessionId: string;
   isWinner?: boolean;
+  isCreator?: boolean;
+  pinnedComment?: Vote;
   onVote?: () => void;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
+  onUndoVote?: () => void;
 }
 
 export function VotingOptionCard({
@@ -33,17 +32,19 @@ export function VotingOptionCard({
   hasVoted,
   sessionId,
   isWinner,
+  isCreator,
+  pinnedComment,
   onVote,
+  onUndoVote,
 }: VotingOptionCardProps) {
-  const { comments } = useSessions();
-  const commentCount = comments.filter((c) => c.optionId === option.id).length;
-  const initials = getInitials(option.title);
+  const { removeOption } = useSessions();
+  const [editOpen, setEditOpen] = useState(false);
   const showVoteButton = phase === "voting" && !hasVoted && onVote;
 
   return (
     <div
       className={cn(
-        "relative rounded-xl border p-4 transition-all",
+        "relative rounded-xl border bg-card p-4 transition-all flex flex-col",
         isSelected && "border-primary bg-primary/5 ring-2 ring-primary/20",
         showVoteButton && "cursor-pointer hover:border-primary/50 hover:shadow-md"
       )}
@@ -56,108 +57,138 @@ export function VotingOptionCard({
         </div>
       )}
 
-      {/* Author row */}
-      <Link
-        href={`/explorations/${sessionId}/options/${option.id}`}
-        className="flex items-center gap-3 mb-3 group"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="size-8 rounded-full bg-[#4a4340] flex items-center justify-center text-[11px] font-semibold text-white shrink-0">
-          {initials}
+      {/* Creator controls */}
+      {isCreator && phase !== "revealed" && !isSelected && (
+        <div className="absolute top-3 right-3 z-10 flex gap-1">
+          <button
+            className="size-6 rounded-full bg-muted/80 text-muted-foreground hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setEditOpen(true);
+            }}
+          >
+            <Pencil className="size-3" />
+          </button>
+          <button
+            className="size-6 rounded-full bg-muted/80 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (window.confirm("Delete this option?")) {
+                removeOption(sessionId, option.id);
+              }
+            }}
+          >
+            <Trash2 className="size-3" />
+          </button>
         </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <p className="text-sm font-semibold leading-tight group-hover:underline truncate">
-            {option.title}
-          </p>
-          {isWinner && (
-            <Badge variant="outline" className="shrink-0 gap-1 text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-400">
-              <Trophy className="size-2.5" />
-              Winner
-            </Badge>
-          )}
-        </div>
-      </Link>
+      )}
+
+      {/* Edit dialog */}
+      {isCreator && (
+        <EditOptionDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          sessionId={sessionId}
+          option={option}
+        />
+      )}
 
       {/* Media */}
-      {option.mediaType === "image" && option.mediaUrl && (
-        <Link
-          href={`/explorations/${sessionId}/options/${option.id}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mb-3 rounded-lg overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={option.mediaUrl}
-              alt={option.title}
-              className="w-full h-auto object-cover max-h-60"
-            />
-          </div>
-        </Link>
-      )}
+      <Link
+        href={`/explorations/${sessionId}/options/${option.id}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <OptionMedia option={option} variant="compact" className="mb-3" />
+      </Link>
 
-      {option.mediaType === "figma-embed" && option.mediaUrl && (
-        <Link
-          href={`/explorations/${sessionId}/options/${option.id}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mb-3 flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">
-            <Figma className="size-4 shrink-0" />
-            <span className="text-xs text-muted-foreground truncate">Figma design</span>
-          </div>
-        </Link>
-      )}
-
-      {option.mediaType === "excalidraw" && option.mediaUrl && (
-        <Link
-          href={`/explorations/${sessionId}/options/${option.id}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mb-3 flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">
-            <PenLine className="size-4 shrink-0" />
-            <span className="text-xs text-muted-foreground truncate">Excalidraw sketch</span>
-          </div>
-        </Link>
-      )}
+      {/* Title + winner badge */}
+      <Link
+        href={`/explorations/${sessionId}/options/${option.id}`}
+        className="flex items-center gap-2 mb-1 group"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-sm font-semibold leading-tight group-hover:underline truncate">
+          {option.title}
+        </p>
+        {isWinner && (
+          <Badge variant="outline" className="shrink-0 gap-1 text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-400">
+            <Trophy className="size-2.5" />
+            Winner
+          </Badge>
+        )}
+      </Link>
 
       {/* Body */}
       {option.description && (
-        <p className="text-sm leading-relaxed mb-3 line-clamp-3">
+        <p className="text-sm leading-relaxed mb-2 line-clamp-3 text-muted-foreground">
           {option.description}
         </p>
       )}
 
-      {/* Engagement row */}
-      <div className="flex items-center justify-between text-muted-foreground py-1.5">
-        <div className="flex items-center gap-1.5">
-          <Heart className="size-4" />
-          <span className="text-xs">0 votes</span>
+      {/* Suggested by (user attribution) */}
+      {option.suggested && option.suggestedBy && (
+        <div className="flex items-center gap-2 mb-2">
+          <div className="size-5 rounded-full bg-muted-foreground flex items-center justify-center text-[8px] font-semibold text-background shrink-0">
+            {getInitials(option.suggestedBy)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {option.suggestedBy}
+          </p>
         </div>
-        <Link
-          href={`/explorations/${sessionId}/options/${option.id}`}
-          className="flex items-center gap-1.5 hover:text-foreground transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MessageCircle className="size-4" />
-          <span className="text-xs">
-            {commentCount} {commentCount === 1 ? "comment" : "comments"}
-          </span>
-        </Link>
-      </div>
+      )}
 
-      {/* Vote button */}
-      {showVoteButton && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-2 w-full"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onVote();
-          }}
-        >
-          Vote for this
-        </Button>
+      {/* Pinned comment — revealed phase */}
+      {phase === "revealed" && pinnedComment && (
+        <div className="flex items-start gap-1.5 mb-2 rounded-md bg-amber-50 dark:bg-amber-500/10 px-2.5 py-2 text-xs">
+          <Pin className="size-3 text-amber-500 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <span className="font-medium text-amber-700 dark:text-amber-400">{pinnedComment.voterName}</span>
+            <p className="text-amber-900/70 dark:text-amber-300/70 leading-relaxed">{pinnedComment.comment}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Vote button — pushed to bottom */}
+      {phase === "voting" && (
+        hasVoted && isSelected && onUndoVote ? (
+          <Button
+            size="sm"
+            variant="default"
+            className="mt-auto w-full"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onUndoVote();
+            }}
+          >
+            <Check className="size-3.5" />
+            You voted!
+          </Button>
+        ) : hasVoted ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-auto w-full pointer-events-none"
+            disabled
+          >
+            You voted!
+          </Button>
+        ) : onVote ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-auto w-full"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onVote();
+            }}
+          >
+            Vote for this
+          </Button>
+        ) : null
       )}
     </div>
   );

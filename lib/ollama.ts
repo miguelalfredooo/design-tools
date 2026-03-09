@@ -34,3 +34,14 @@ export async function generateWithOllama(prompt: string): Promise<string> {
 export function getModelName(): string {
   return OLLAMA_MODEL;
 }
+
+/** Strip markdown code fences and parse JSON from Ollama response */
+export function parseOllamaJSON<T>(response: string): T {
+  let jsonStr = response.trim();
+  if (jsonStr.startsWith("```")) {
+    jsonStr = jsonStr
+      .replace(/^```(?:json)?\n?/, "")
+      .replace(/\n?```$/, "");
+  }
+  return JSON.parse(jsonStr);
+}

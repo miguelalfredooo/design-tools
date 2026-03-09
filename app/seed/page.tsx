@@ -40,14 +40,14 @@ function saveCreatorToken(sessionId: string, token: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Session 1 — REVEALED: full results with comments, effort/impact
+// Session 1 — REVEALED: full results
 // ─────────────────────────────────────────────────────────────────────
 
 async function seedRevealed(setStatus: (s: string) => void): Promise<string> {
   setStatus("Creating Pricing Page session...");
   const creatorToken = crypto.randomUUID();
 
-  const { id: sessionId } = await api("/api/sessions", {
+  const { id: sessionId } = await api("/api/design/sessions", {
     title: "Pricing Page Redesign",
     description:
       "Four directions for the new SaaS pricing page. Each takes a different approach to layout, hierarchy, and conversion strategy.",
@@ -106,100 +106,41 @@ async function seedRevealed(setStatus: (s: string) => void): Promise<string> {
   saveCreatorToken(sessionId, creatorToken);
 
   // Start voting
-  await apiPatch(`/api/sessions/${sessionId}`, {
+  await apiPatch(`/api/design/sessions/${sessionId}`, {
     creatorToken,
     phase: "voting",
   });
 
   // Fetch option IDs
-  const sessionData = await fetch(`/api/sessions/${sessionId}`).then(
+  const sessionData = await fetch(`/api/design/sessions/${sessionId}`).then(
     (r) => r.json()
   );
   const optionIds: string[] = sessionData.options.map(
     (o: { id: string }) => o.id
   );
 
-  // Cast 7 votes — spread across all 4 options, every vote has a comment
+  // Cast 7 votes — spread across all 4 options
   setStatus("Casting votes...");
   const voters = [
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Alice Chen",
-      optionIndex: 2,
-      comment:
-        "This directly addresses our biggest support pain point. The real-time cost preview removes all ambiguity.",
-      effort: "high",
-      impact: "high",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Marcus Johnson",
-      optionIndex: 0,
-      comment:
-        "Simple and proven. Users know this pattern from every other SaaS site — don't reinvent the wheel.",
-      effort: "low",
-      impact: "medium",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Priya Sharma",
-      optionIndex: 2,
-      comment:
-        "Love the calculator approach! Would be great to add a 'share quote' feature for procurement teams.",
-      effort: "high",
-      impact: "high",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "David Kim",
-      optionIndex: 0,
-      comment:
-        "Horizontal cards are what everyone expects. Low risk, fast to ship.",
-      effort: "low",
-      impact: "medium",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Sarah Martinez",
-      optionIndex: 1,
-      comment:
-        "65% of our traffic is mobile. This is the only option that truly prioritizes that experience.",
-      effort: "medium",
-      impact: "high",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Leo Tanaka",
-      optionIndex: 3,
-      comment:
-        "Power users will love this — we lose deals when buyers can't compare features side by side.",
-      effort: "medium",
-      impact: "high",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Nina Okafor",
-      optionIndex: 2,
-      comment:
-        "The calculator idea is genius. We could even pre-fill it from their usage data after login.",
-      effort: "high",
-      impact: "high",
-    },
+    { voterId: crypto.randomUUID(), voterName: "Alice Chen", optionIndex: 2 },
+    { voterId: crypto.randomUUID(), voterName: "Marcus Johnson", optionIndex: 0 },
+    { voterId: crypto.randomUUID(), voterName: "Priya Sharma", optionIndex: 2 },
+    { voterId: crypto.randomUUID(), voterName: "David Kim", optionIndex: 0 },
+    { voterId: crypto.randomUUID(), voterName: "Sarah Martinez", optionIndex: 1 },
+    { voterId: crypto.randomUUID(), voterName: "Leo Tanaka", optionIndex: 3 },
+    { voterId: crypto.randomUUID(), voterName: "Nina Okafor", optionIndex: 2 },
   ];
 
   for (const voter of voters) {
-    await api(`/api/sessions/${sessionId}/votes`, {
+    await api(`/api/design/sessions/${sessionId}/votes`, {
       optionId: optionIds[voter.optionIndex],
       voterId: voter.voterId,
       voterName: voter.voterName,
-      comment: voter.comment || undefined,
-      effort: voter.effort,
-      impact: voter.impact,
     });
   }
 
   // Force reveal
-  await apiPatch(`/api/sessions/${sessionId}`, {
+  await apiPatch(`/api/design/sessions/${sessionId}`, {
     creatorToken,
     phase: "revealed",
   });
@@ -215,7 +156,7 @@ async function seedVoting(setStatus: (s: string) => void): Promise<string> {
   setStatus("Creating Onboarding Flow session...");
   const creatorToken = crypto.randomUUID();
 
-  const { id: sessionId } = await api("/api/sessions", {
+  const { id: sessionId } = await api("/api/design/sessions", {
     title: "Onboarding Flow",
     description:
       "Three approaches to the first-run experience. Goal: reduce drop-off between signup and first value moment.",
@@ -263,13 +204,13 @@ async function seedVoting(setStatus: (s: string) => void): Promise<string> {
   saveCreatorToken(sessionId, creatorToken);
 
   // Start voting
-  await apiPatch(`/api/sessions/${sessionId}`, {
+  await apiPatch(`/api/design/sessions/${sessionId}`, {
     creatorToken,
     phase: "voting",
   });
 
   // Fetch option IDs
-  const sessionData = await fetch(`/api/sessions/${sessionId}`).then(
+  const sessionData = await fetch(`/api/design/sessions/${sessionId}`).then(
     (r) => r.json()
   );
   const optionIds: string[] = sessionData.options.map(
@@ -278,41 +219,16 @@ async function seedVoting(setStatus: (s: string) => void): Promise<string> {
 
   // Cast only 3 of 5 votes to show mid-voting state
   const partialVoters = [
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Elena Voss",
-      optionIndex: 1,
-      comment: "The guided tour felt very natural when I tested the prototype.",
-      effort: "medium",
-      impact: "high",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "James Park",
-      optionIndex: 2,
-      comment: "Templates get users to value fastest — skip the blank canvas problem entirely.",
-      effort: "low",
-      impact: "high",
-    },
-    {
-      voterId: crypto.randomUUID(),
-      voterName: "Fatima Al-Rashid",
-      optionIndex: 1,
-      comment:
-        "Strongly prefer this — but the tooltip placement needs work on small screens.",
-      effort: "medium",
-      impact: "medium",
-    },
+    { voterId: crypto.randomUUID(), voterName: "Elena Voss", optionIndex: 1 },
+    { voterId: crypto.randomUUID(), voterName: "James Park", optionIndex: 2 },
+    { voterId: crypto.randomUUID(), voterName: "Fatima Al-Rashid", optionIndex: 1 },
   ];
 
   for (const voter of partialVoters) {
-    await api(`/api/sessions/${sessionId}/votes`, {
+    await api(`/api/design/sessions/${sessionId}/votes`, {
       optionId: optionIds[voter.optionIndex],
       voterId: voter.voterId,
       voterName: voter.voterName,
-      comment: voter.comment || undefined,
-      effort: voter.effort,
-      impact: voter.impact,
     });
   }
 
@@ -328,7 +244,7 @@ async function seedSetup(setStatus: (s: string) => void): Promise<string> {
   setStatus("Creating Dashboard Widgets session...");
   const creatorToken = crypto.randomUUID();
 
-  const { id: sessionId } = await api("/api/sessions", {
+  const { id: sessionId } = await api("/api/design/sessions", {
     title: "Dashboard Widget Style",
     description:
       "Choosing the visual direction for analytics dashboard widgets. Impacts the entire dashboard feel.",
@@ -372,12 +288,22 @@ async function seedSetup(setStatus: (s: string) => void): Promise<string> {
 // Orchestrator
 // ─────────────────────────────────────────────────────────────────────
 
+async function seedResearch(setStatus: (s: string) => void) {
+  setStatus("Seeding research data (observations, segments, insights)...");
+  const res = await fetch("/api/design/research/seed", { method: "POST" });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error ?? "Research seed failed");
+  }
+}
+
 async function seedAll(
   setStatus: (s: string) => void
 ): Promise<string> {
   const revealedId = await seedRevealed(setStatus);
   await seedVoting(setStatus);
   await seedSetup(setStatus);
+  await seedResearch(setStatus);
 
   // Return the revealed session as the redirect target (most interesting)
   return revealedId;

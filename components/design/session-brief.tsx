@@ -23,22 +23,22 @@ export function SessionBrief({ session }: SessionBriefProps) {
   if (!hasBrief) return null;
 
   return (
-    <div className="rounded-lg border bg-white">
+    <div>
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium"
+        className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         Context Brief
         <ChevronDown
           className={cn(
-            "size-4 text-muted-foreground transition-transform",
+            "size-3.5 transition-transform",
             expanded && "rotate-180"
           )}
         />
       </button>
       {expanded && (
-        <div className="grid gap-3 px-4 pb-4">
+        <div className="grid gap-3 mt-2 grid-cols-1 sm:grid-cols-2 w-full">
           {briefFields.map(({ key, label, icon: Icon }) => {
             const value = session[key];
             if (!value) return null;

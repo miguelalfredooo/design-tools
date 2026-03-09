@@ -2,11 +2,13 @@ import type {
   VotingSessionRow,
   VotingOptionRow,
   VotingVoteRow,
+  ReactionRow,
   DesignCommentRow,
   MediaType,
 } from "./design-types";
+import { getAdminPassword } from "@/hooks/use-admin";
 
-const BASE = "/api/sessions";
+const BASE = "/api/design/sessions";
 
 async function api<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -38,13 +40,14 @@ export async function apiCreateSession(params: {
   });
 }
 
-export async function apiGetSession(id: string) {
+export async function apiGetSession(id: string, voterId?: string) {
+  const url = voterId ? `${BASE}/${id}?voterId=${encodeURIComponent(voterId)}` : `${BASE}/${id}`;
   return api<{
     session: VotingSessionRow;
     options: VotingOptionRow[];
     votes: VotingVoteRow[];
     voteCount: number;
-  }>(`${BASE}/${id}`);
+  }>(url);
 }
 
 export async function apiUpdateSession(
@@ -54,14 +57,14 @@ export async function apiUpdateSession(
 ) {
   return api<{ ok: true }>(`${BASE}/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ creatorToken, ...updates }),
+    body: JSON.stringify({ creatorToken, adminPassword: getAdminPassword(), ...updates }),
   });
 }
 
 export async function apiDeleteSession(id: string, creatorToken: string) {
   return api<{ ok: true }>(`${BASE}/${id}`, {
     method: "DELETE",
-    body: JSON.stringify({ creatorToken }),
+    body: JSON.stringify({ creatorToken, adminPassword: getAdminPassword() }),
   });
 }
 
@@ -74,7 +77,19 @@ export async function apiAddOption(
 ) {
   return api<{ option: VotingOptionRow }>(`${BASE}/${sessionId}/options`, {
     method: "POST",
-    body: JSON.stringify({ ...option, creatorToken }),
+    body: JSON.stringify({ ...option, creatorToken, adminPassword: getAdminPassword() }),
+  });
+}
+
+export async function apiUpdateOption(
+  sessionId: string,
+  optionId: string,
+  creatorToken: string,
+  updates: { title?: string; description?: string; mediaType?: MediaType; mediaUrl?: string }
+) {
+  return api<{ ok: true }>(`${BASE}/${sessionId}/options`, {
+    method: "PATCH",
+    body: JSON.stringify({ optionId, creatorToken, adminPassword: getAdminPassword(), ...updates }),
   });
 }
 
@@ -85,7 +100,7 @@ export async function apiRemoveOption(
 ) {
   return api<{ ok: true }>(`${BASE}/${sessionId}/options`, {
     method: "DELETE",
-    body: JSON.stringify({ optionId, creatorToken }),
+    body: JSON.stringify({ optionId, creatorToken, adminPassword: getAdminPassword() }),
   });
 }
 
@@ -93,7 +108,7 @@ export async function apiRemoveOption(
 
 export async function apiCastVote(
   sessionId: string,
-  params: { optionId: string; voterId: string; voterName: string; comment?: string; effort?: string; impact?: string }
+  params: { optionId: string; voterId: string; voterName: string; comment?: string }
 ) {
   return api<{ ok: true }>(`${BASE}/${sessionId}/votes`, {
     method: "POST",
@@ -101,18 +116,98 @@ export async function apiCastVote(
   });
 }
 
-// --- Comments ---
-
-export async function apiGetComments(sessionId: string) {
-  return api<{ comments: DesignCommentRow[] }>(`${BASE}/${sessionId}/comments`);
+export async function apiUndoVote(sessionId: string, voterId: string) {
+  return api<{ ok: true }>(`${BASE}/${sessionId}/votes`, {
+    method: "DELETE",
+    body: JSON.stringify({ voterId }),
+  });
 }
 
-export async function apiAddComment(
+export async function apiPinVote(
   sessionId: string,
-  params: { optionId: string; voterId: string; voterName: string; body: string }
+  voteId: string,
+  pinned: boolean,
+  creatorToken: string
+) {
+  return api<{ ok: true }>(`${BASE}/${sessionId}/votes`, {
+    method: "PATCH",
+    body: JSON.stringify({ voteId, pinned, creatorToken, adminPassword: getAdminPassword() }),
+  });
+}
+
+// --- Reactions ---
+
+export async function apiGetReactions(sessionId: string) {
+  return api<{ reactions: ReactionRow[] }>(`${BASE}/${sessionId}/reactions`);
+}
+
+export async function apiToggleReaction(
+  sessionId: string,
+  params: { optionId: string; voterId: string }
+) {
+  return api<{ toggled: "added" | "removed" }>(`${BASE}/${sessionId}/reactions`, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+// --- Spatial Comments ---
+
+export async function apiGetSpatialComments(sessionId: string, optionId: string) {
+  return api<{ comments: DesignCommentRow[] }>(
+    `${BASE}/${sessionId}/comments?optionId=${encodeURIComponent(optionId)}`
+  );
+}
+
+export async function apiAddSpatialComment(
+  sessionId: string,
+  params: { optionId: string; voterId: string; voterName: string; body: string; xPct: number; yPct: number }
 ) {
   return api<{ comment: DesignCommentRow }>(`${BASE}/${sessionId}/comments`, {
     method: "POST",
     body: JSON.stringify(params),
+  });
+}
+
+export async function apiDeleteSpatialComment(
+  sessionId: string,
+  commentId: string,
+  voterId: string
+) {
+  return api<{ ok: true }>(`${BASE}/${sessionId}/comments`, {
+    method: "DELETE",
+    body: JSON.stringify({
+      commentId,
+      voterId,
+      creatorToken: null,
+      adminPassword: getAdminPassword(),
+    }),
+  });
+}
+
+export async function apiDeleteSpatialCommentAsCreator(
+  sessionId: string,
+  commentId: string,
+  creatorToken: string
+) {
+  return api<{ ok: true }>(`${BASE}/${sessionId}/comments`, {
+    method: "DELETE",
+    body: JSON.stringify({
+      commentId,
+      creatorToken,
+      adminPassword: getAdminPassword(),
+    }),
+  });
+}
+
+// --- Suggest Option ---
+
+export async function apiSuggestOption(
+  sessionId: string,
+  option: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string; suggestedBy: string }
+) {
+  return api<{ option: VotingOptionRow }>(`${BASE}/${sessionId}/options`, {
+    method: "POST",
+    body: JSON.stringify({ ...option, suggested: true }),
   });
 }

@@ -36,6 +36,27 @@ export interface OllamaSynthesisResponse {
   one_metric: OllamaOneMetric;
 }
 
+// --- Session-level Ollama response shape ---
+
+export interface SessionSynthesisResponse {
+  recommendation: {
+    option_title: string;
+    rationale: string;
+  };
+  sentiments: {
+    option_title: string;
+    summary: string;
+    tone: "positive" | "mixed" | "negative";
+  }[];
+  comment_themes: {
+    title: string;
+    detail: string;
+  }[];
+  consensus: string[];
+  tensions: string[];
+  next_steps: string[];
+}
+
 // --- Supabase row shape ---
 
 export interface ResearchInsightRow {
@@ -48,6 +69,7 @@ export interface ResearchInsightRow {
   source_session_ids: string[] | null;
   metadata: Record<string, unknown> | null;
   batch_id: string;
+  session_id: string | null;
   created_at: string;
 }
 
@@ -60,7 +82,11 @@ export type InsightType =
   | "tension"
   | "open_question"
   | "signal"
-  | "one_metric";
+  | "one_metric"
+  | "recommendation"
+  | "sentiment"
+  | "comment_theme"
+  | "next_step";
 
 export interface ResearchInsight {
   id: string;
@@ -72,6 +98,7 @@ export interface ResearchInsight {
   sourceSessionIds: string[] | null;
   metadata: Record<string, unknown> | null;
   batchId: string;
+  sessionId: string | null;
   createdAt: number;
 }
 
@@ -86,6 +113,7 @@ export function insightFromRow(row: ResearchInsightRow): ResearchInsight {
     sourceSessionIds: row.source_session_ids,
     metadata: row.metadata,
     batchId: row.batch_id,
+    sessionId: row.session_id ?? null,
     createdAt: new Date(row.created_at).getTime(),
   };
 }

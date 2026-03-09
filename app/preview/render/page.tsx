@@ -112,7 +112,7 @@ export default function RenderPreviewPage() {
 
       {/* Preview iframe */}
       <div className="mx-auto max-w-[720px] px-6 py-8">
-        <div className="overflow-hidden rounded-xl border border-border bg-white">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           <iframe
             srcDoc={html}
             title="Component Preview"

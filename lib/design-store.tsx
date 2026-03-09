@@ -8,20 +8,29 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ExplorationSession, DesignComment, MediaType } from "./design-types";
-import { sessionFromRow, commentFromRow } from "./design-types";
+import type { ExplorationSession, Reaction, SpatialComment, MediaType } from "./design-types";
+import { sessionFromRow, reactionFromRow, spatialCommentFromRow } from "./design-types";
 import { generateUUID } from "./design-utils";
 import { supabase } from "./supabase";
+import { isAdminMode } from "@/hooks/use-admin";
 import {
   apiCreateSession,
   apiGetSession,
   apiUpdateSession,
   apiDeleteSession,
   apiAddOption,
+  apiUpdateOption,
   apiRemoveOption,
   apiCastVote,
-  apiGetComments,
-  apiAddComment,
+  apiUndoVote,
+  apiPinVote,
+  apiGetReactions,
+  apiToggleReaction,
+  apiSuggestOption,
+  apiGetSpatialComments,
+  apiAddSpatialComment,
+  apiDeleteSpatialComment,
+  apiDeleteSpatialCommentAsCreator,
 } from "./design-api";
 
 // --- localStorage keys ---
@@ -92,6 +101,12 @@ interface SessionContextValue {
     sessionId: string,
     option: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string }
   ) => Promise<void>;
+  /** Update an option */
+  updateOption: (
+    sessionId: string,
+    optionId: string,
+    updates: { title?: string; description?: string; mediaType?: MediaType; mediaUrl?: string }
+  ) => Promise<void>;
   /** Remove an option */
   removeOption: (sessionId: string, optionId: string) => Promise<void>;
   /** Set participant count */
@@ -104,24 +119,38 @@ interface SessionContextValue {
     optionId: string,
     voterName: string,
     comment?: string,
-    effort?: string,
-    impact?: string
   ) => Promise<void>;
+  /** Undo a vote */
+  undoVote: (sessionId: string) => Promise<void>;
+  /** Pin/unpin a vote comment */
+  pinVote: (sessionId: string, voteId: string, pinned: boolean) => Promise<void>;
   /** Reset session to setup */
   resetSession: (sessionId: string) => Promise<void>;
   /** Reveal results (force) */
   revealResults: (sessionId: string) => Promise<void>;
-  /** Comments for current session */
-  comments: DesignComment[];
-  /** Load comments for a session */
-  loadComments: (sessionId: string) => Promise<void>;
-  /** Add a comment to an option */
-  addComment: (
+  /** Reactions for current session */
+  reactions: Reaction[];
+  /** Load reactions for a session */
+  loadReactions: (sessionId: string) => Promise<void>;
+  /** Toggle a heart reaction on an option */
+  toggleReaction: (sessionId: string, optionId: string) => Promise<void>;
+  /** Suggest an option (as a participant, no creatorToken) */
+  suggestOption: (
     sessionId: string,
-    optionId: string,
-    voterName: string,
-    body: string
+    option: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string },
+    suggestedBy: string
   ) => Promise<void>;
+  /** Spatial comments for current option */
+  spatialComments: SpatialComment[];
+  /** Load spatial comments for an option */
+  loadSpatialComments: (sessionId: string, optionId: string) => Promise<void>;
+  /** Add a spatial comment */
+  addSpatialComment: (
+    sessionId: string,
+    params: { optionId: string; voterId: string; voterName: string; body: string; xPct: number; yPct: number }
+  ) => Promise<void>;
+  /** Delete a spatial comment */
+  deleteSpatialComment: (sessionId: string, optionId: string, commentId: string) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -130,14 +159,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<ExplorationSession | null>(null);
   const [mySessions, setMySessions] = useState<ExplorationSession[]>([]);
   const [allSessions, setAllSessions] = useState<ExplorationSession[]>([]);
-  const [comments, setComments] = useState<DesignComment[]>([]);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [spatialComments, setSpatialComments] = useState<SpatialComment[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Load a single session
   const loadSession = useCallback(async (id: string) => {
     setLoading(true);
     try {
-      const data = await apiGetSession(id);
+      const vid = getVoterId();
+      const data = await apiGetSession(id, vid);
       setSession(
         sessionFromRow(data.session, data.options, data.votes, data.voteCount)
       );
@@ -293,7 +324,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "voting_votes",
           filter: `session_id=eq.${sessionId}`,
@@ -361,8 +392,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const deleteSession = useCallback(
     async (id: string) => {
       const token = getCreatorToken(id);
-      if (!token) throw new Error("Not the session creator");
-      await apiDeleteSession(id, token);
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiDeleteSession(id, token ?? "");
       setMySessions((prev) => prev.filter((s) => s.id !== id));
       if (session?.id === id) setSession(null);
     },
@@ -375,8 +406,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       option: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string }
     ) => {
       const token = getCreatorToken(sessionId);
-      if (!token) throw new Error("Not the session creator");
-      await apiAddOption(sessionId, token, option);
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiAddOption(sessionId, token ?? "", option);
+      await loadSession(sessionId);
+    },
+    [loadSession]
+  );
+
+  const updateOption = useCallback(
+    async (
+      sessionId: string,
+      optionId: string,
+      updates: { title?: string; description?: string; mediaType?: MediaType; mediaUrl?: string }
+    ) => {
+      const token = getCreatorToken(sessionId);
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiUpdateOption(sessionId, optionId, token ?? "", updates);
       await loadSession(sessionId);
     },
     [loadSession]
@@ -385,8 +430,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const removeOption = useCallback(
     async (sessionId: string, optionId: string) => {
       const token = getCreatorToken(sessionId);
-      if (!token) throw new Error("Not the session creator");
-      await apiRemoveOption(sessionId, optionId, token);
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiRemoveOption(sessionId, optionId, token ?? "");
       await loadSession(sessionId);
     },
     [loadSession]
@@ -395,8 +440,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const setParticipantCount = useCallback(
     async (sessionId: string, count: number) => {
       const token = getCreatorToken(sessionId);
-      if (!token) throw new Error("Not the session creator");
-      await apiUpdateSession(sessionId, token, { participantCount: Math.max(1, count) });
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiUpdateSession(sessionId, token ?? "", { participantCount: Math.max(1, count) });
       await loadSession(sessionId);
     },
     [loadSession]
@@ -405,8 +450,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const startVoting = useCallback(
     async (sessionId: string) => {
       const token = getCreatorToken(sessionId);
-      if (!token) throw new Error("Not the session creator");
-      await apiUpdateSession(sessionId, token, { phase: "voting" });
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiUpdateSession(sessionId, token ?? "", { phase: "voting" });
       await loadSession(sessionId);
     },
     [loadSession]
@@ -418,11 +463,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       optionId: string,
       voterName: string,
       comment?: string,
-      effort?: string,
-      impact?: string
     ) => {
       const voterId = getVoterId();
-      await apiCastVote(sessionId, { optionId, voterId, voterName, comment, effort, impact });
+      await apiCastVote(sessionId, { optionId, voterId, voterName, ...(comment ? { comment } : {}) });
+      await loadSession(sessionId);
+    },
+    [loadSession]
+  );
+
+  const undoVote = useCallback(
+    async (sessionId: string) => {
+      const voterId = getVoterId();
+      await apiUndoVote(sessionId, voterId);
+      await loadSession(sessionId);
+    },
+    [loadSession]
+  );
+
+  const pinVote = useCallback(
+    async (sessionId: string, voteId: string, pinned: boolean) => {
+      const token = getCreatorToken(sessionId);
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiPinVote(sessionId, voteId, pinned, token ?? "");
       await loadSession(sessionId);
     },
     [loadSession]
@@ -431,8 +493,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const resetSession = useCallback(
     async (sessionId: string) => {
       const token = getCreatorToken(sessionId);
-      if (!token) throw new Error("Not the session creator");
-      await apiUpdateSession(sessionId, token, { phase: "setup" });
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiUpdateSession(sessionId, token ?? "", { phase: "setup" });
       await loadSession(sessionId);
     },
     [loadSession]
@@ -441,34 +503,117 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const revealResults = useCallback(
     async (sessionId: string) => {
       const token = getCreatorToken(sessionId);
-      if (!token) throw new Error("Not the session creator");
-      await apiUpdateSession(sessionId, token, { phase: "revealed" });
+      if (!token && !isAdminMode()) throw new Error("Not the session creator");
+      await apiUpdateSession(sessionId, token ?? "", { phase: "revealed" });
       await loadSession(sessionId);
     },
     [loadSession]
   );
 
-  const loadComments = useCallback(async (sessionId: string) => {
+  const loadReactions = useCallback(async (sessionId: string) => {
     try {
-      const data = await apiGetComments(sessionId);
-      setComments(data.comments.map(commentFromRow));
+      const data = await apiGetReactions(sessionId);
+      setReactions(data.reactions.map(reactionFromRow));
     } catch {
-      setComments([]);
+      setReactions([]);
     }
   }, []);
 
-  const addComment = useCallback(
+  const toggleReaction = useCallback(
+    async (sessionId: string, optionId: string) => {
+      const voterId = getVoterId();
+      // Optimistic update
+      setReactions((prev) => {
+        const existing = prev.find(
+          (r) => r.optionId === optionId && r.voterId === voterId
+        );
+        if (existing) {
+          return prev.filter((r) => r.id !== existing.id);
+        }
+        return [
+          ...prev,
+          {
+            id: `temp-${Date.now()}`,
+            sessionId,
+            optionId,
+            voterId,
+            createdAt: Date.now(),
+          },
+        ];
+      });
+      try {
+        await apiToggleReaction(sessionId, { optionId, voterId });
+        // Reload to get real data
+        await loadReactions(sessionId);
+      } catch {
+        // Revert on error
+        await loadReactions(sessionId);
+      }
+    },
+    [loadReactions]
+  );
+
+  const suggestOption = useCallback(
     async (
       sessionId: string,
-      optionId: string,
-      voterName: string,
-      body: string
+      option: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string },
+      suggestedBy: string
     ) => {
-      const voterId = getVoterId();
-      await apiAddComment(sessionId, { optionId, voterId, voterName, body });
-      await loadComments(sessionId);
+      await apiSuggestOption(sessionId, { ...option, suggestedBy });
+      await loadSession(sessionId);
     },
-    [loadComments]
+    [loadSession]
+  );
+
+  const loadSpatialComments = useCallback(async (sessionId: string, optionId: string) => {
+    try {
+      const data = await apiGetSpatialComments(sessionId, optionId);
+      const parsed = data.comments
+        .map(spatialCommentFromRow)
+        .filter((c): c is SpatialComment => c !== null);
+      setSpatialComments(parsed);
+    } catch {
+      setSpatialComments([]);
+    }
+  }, []);
+
+  const addSpatialComment = useCallback(
+    async (
+      sessionId: string,
+      params: { optionId: string; voterId: string; voterName: string; body: string; xPct: number; yPct: number }
+    ) => {
+      // Optimistic add
+      const tempComment: SpatialComment = {
+        id: `temp-${Date.now()}`,
+        sessionId,
+        ...params,
+        createdAt: Date.now(),
+      };
+      setSpatialComments((prev) => [...prev, tempComment]);
+      try {
+        await apiAddSpatialComment(sessionId, params);
+        await loadSpatialComments(sessionId, params.optionId);
+      } catch {
+        // Revert on error
+        setSpatialComments((prev) => prev.filter((c) => c.id !== tempComment.id));
+        throw new Error("Failed to add comment");
+      }
+    },
+    [loadSpatialComments]
+  );
+
+  const deleteSpatialComment = useCallback(
+    async (sessionId: string, optionId: string, commentId: string) => {
+      const token = getCreatorToken(sessionId);
+      const voterId = getVoterId();
+      if (token || isAdminMode()) {
+        await apiDeleteSpatialCommentAsCreator(sessionId, commentId, token ?? "");
+      } else {
+        await apiDeleteSpatialComment(sessionId, commentId, voterId);
+      }
+      await loadSpatialComments(sessionId, optionId);
+    },
+    [loadSpatialComments]
   );
 
   return (
@@ -483,15 +628,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       createSession,
       deleteSession,
       addOption,
+      updateOption,
       removeOption,
       setParticipantCount,
       startVoting,
       castVote,
+      undoVote,
+      pinVote,
       resetSession,
       revealResults,
-      comments,
-      loadComments,
-      addComment,
+      reactions,
+      loadReactions,
+      toggleReaction,
+      suggestOption,
+      spatialComments,
+      loadSpatialComments,
+      addSpatialComment,
+      deleteSpatialComment,
     }}>
       {children}
     </SessionContext>

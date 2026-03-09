@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Figma, Heart, MessageCircle, PenLine, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import type { ExplorationOption, Phase } from "@/lib/design-types";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useSessions } from "@/lib/design-store";
-import { CommentInput } from "@/components/design/comment-input";
+import { getInitials } from "@/lib/design-utils";
+import { OptionMedia } from "@/components/design/option-media";
 
 interface FeedOptionPostProps {
   option: ExplorationOption;
@@ -15,106 +14,49 @@ interface FeedOptionPostProps {
   isWinner?: boolean;
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export function FeedOptionPost({ option, sessionId, phase, isWinner }: FeedOptionPostProps) {
-  const { comments } = useSessions();
-  const commentCount = comments.filter((c) => c.optionId === option.id).length;
-  const initials = getInitials(option.title);
-
   return (
-    <div>
-      {/* Author row */}
-      <Link
-        href={`/explorations/${sessionId}/options/${option.id}`}
-        className="flex items-center gap-3 mb-3 group"
-      >
-        <div className="size-9 rounded-full bg-[#4a4340] flex items-center justify-center text-xs font-semibold text-white shrink-0">
-          {initials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold leading-tight group-hover:underline truncate">
-              {option.title}
-            </p>
-            {isWinner && (
-              <Badge variant="outline" className="shrink-0 gap-1 text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-400">
-                <Trophy className="size-2.5" />
-                Winner
-              </Badge>
-            )}
-          </div>
-        </div>
+    <div className="rounded-xl border bg-card p-4">
+      {/* Media */}
+      <Link href={`/explorations/${sessionId}/options/${option.id}`}>
+        <OptionMedia option={option} className="mb-3" />
       </Link>
 
-      {/* Media */}
-      {option.mediaType === "image" && option.mediaUrl && (
-        <Link href={`/explorations/${sessionId}/options/${option.id}`}>
-          <div className="mb-3 rounded-lg overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={option.mediaUrl}
-              alt={option.title}
-              className="w-full h-[427px] object-cover"
-            />
-          </div>
-        </Link>
-      )}
-
-      {option.mediaType === "figma-embed" && option.mediaUrl && (
-        <Link href={`/explorations/${sessionId}/options/${option.id}`}>
-          <div className="mb-3 flex items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3">
-            <Figma className="size-5 shrink-0" />
-            <span className="text-sm text-muted-foreground truncate">Figma design</span>
-          </div>
-        </Link>
-      )}
-
-      {option.mediaType === "excalidraw" && option.mediaUrl && (
-        <Link href={`/explorations/${sessionId}/options/${option.id}`}>
-          <div className="mb-3 flex items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3">
-            <PenLine className="size-5 shrink-0" />
-            <span className="text-sm text-muted-foreground truncate">Excalidraw sketch</span>
-          </div>
-        </Link>
-      )}
+      {/* Title + winner badge */}
+      <Link
+        href={`/explorations/${sessionId}/options/${option.id}`}
+        className="flex items-center gap-2 mb-1 group"
+      >
+        <p className="text-sm font-semibold leading-tight group-hover:underline truncate">
+          {option.title}
+        </p>
+        {isWinner && (
+          <Badge variant="outline" className="shrink-0 gap-1 text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-400">
+            <Trophy className="size-2.5" />
+            Winner
+          </Badge>
+        )}
+      </Link>
 
       {/* Body */}
       {option.description && (
-        <p className="text-sm leading-relaxed mb-3 line-clamp-3">
+        <p className="text-sm leading-relaxed mb-2 line-clamp-3 text-muted-foreground">
           {option.description}
         </p>
       )}
 
-      <div className="border-t my-3" />
-
-      {/* Engagement row */}
-      <div className="flex items-center justify-between text-muted-foreground py-1.5">
-        <div className="flex items-center gap-1.5">
-          <Heart className="size-4" />
-          <span className="text-xs">0 votes</span>
+      {/* Suggested by (user attribution) */}
+      {option.suggested && option.suggestedBy && (
+        <div className="flex items-center gap-2">
+          <div className="size-5 rounded-full bg-muted-foreground flex items-center justify-center text-[8px] font-semibold text-background shrink-0">
+            {getInitials(option.suggestedBy)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {option.suggestedBy}
+          </p>
         </div>
-        <Link
-          href={`/explorations/${sessionId}/options/${option.id}`}
-          className="flex items-center gap-1.5 hover:text-foreground transition-colors"
-        >
-          <MessageCircle className="size-4" />
-          <span className="text-xs">
-            {commentCount} {commentCount === 1 ? "comment" : "comments"}
-          </span>
-        </Link>
-      </div>
+      )}
 
-      <div className="border-t my-3" />
-
-      {/* Comment input */}
-      <CommentInput sessionId={sessionId} optionId={option.id} />
     </div>
   );
 }

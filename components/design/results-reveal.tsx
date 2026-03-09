@@ -1,12 +1,15 @@
 "use client";
 
-import { Trophy, Equal, MessageSquareText, Wrench, TrendingUp } from "lucide-react";
-import type { ExplorationSession, EffortLevel } from "@/lib/design-types";
+import { Trophy, Equal, Wrench, TrendingUp, Pin, PinOff } from "lucide-react";
+import type { ExplorationSession, EffortLevel, Vote } from "@/lib/design-types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { getInitials } from "@/lib/design-utils";
 
 interface ResultsRevealProps {
   session: ExplorationSession;
+  isCreator?: boolean;
+  onPinVote?: (voteId: string, pinned: boolean) => void;
 }
 
 const effortImpactLabel: Record<string, string> = {
@@ -16,9 +19,9 @@ const effortImpactLabel: Record<string, string> = {
 };
 
 const effortImpactColor: Record<string, string> = {
-  low: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  medium: "bg-amber-100 text-amber-700 border-amber-200",
-  high: "bg-rose-100 text-rose-700 border-rose-200",
+  low: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30",
+  medium: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  high: "bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30",
 };
 
 interface OptionResult {
@@ -106,7 +109,7 @@ function computeResults(session: ExplorationSession): OptionResult[] {
   return sorted;
 }
 
-export function ResultsReveal({ session }: ResultsRevealProps) {
+export function ResultsReveal({ session, isCreator, onPinVote }: ResultsRevealProps) {
   const results = computeResults(session);
 
   return (
@@ -119,23 +122,11 @@ export function ResultsReveal({ session }: ResultsRevealProps) {
             className={cn(
               "relative overflow-hidden rounded-lg border p-4 transition-all",
               "animate-in fade-in slide-in-from-bottom-2",
-              r.isWinner && "border-primary bg-primary/5 ring-1 ring-primary/20"
+              r.isWinner && "bg-card shadow-md ring-1 ring-foreground/5"
             )}
             style={{ animationDelay: `${i * 100}ms`, animationFillMode: "both" }}
           >
-            {/* Background bar */}
-            <div
-              className={cn(
-                "absolute inset-y-0 left-0 transition-all duration-700 ease-out",
-                r.isWinner ? "bg-primary/10" : "bg-muted/50"
-              )}
-              style={{
-                width: `${r.percentage}%`,
-                animationDelay: `${i * 100 + 200}ms`,
-              }}
-            />
-
-            <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 {r.isWinner && (
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -182,33 +173,72 @@ export function ResultsReveal({ session }: ResultsRevealProps) {
                 </span>
               </div>
             </div>
+            {/* Voter comments */}
+            <VoteComments
+              votes={session.votes.filter((v) => v.optionId === r.optionId && v.comment)}
+              isCreator={isCreator}
+              onPinVote={onPinVote}
+            />
           </div>
         ))}
       </div>
 
-      {/* Feedback summary — shows comments attributed to voter name, but NOT which option they voted for */}
-      {session.votes.some((v) => v.comment) && (
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquareText className="size-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium">Feedback</h4>
+    </div>
+  );
+}
+
+function VoteComments({
+  votes,
+  isCreator,
+  onPinVote,
+}: {
+  votes: Vote[];
+  isCreator?: boolean;
+  onPinVote?: (voteId: string, pinned: boolean) => void;
+}) {
+  if (votes.length === 0) return null;
+
+  // Pinned comments first
+  const sorted = [...votes].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return 0;
+  });
+
+  return (
+    <div className="mt-3 space-y-2 border-t pt-3">
+      {sorted.map((vote) => (
+        <div
+          key={vote.id}
+          className={cn(
+            "flex items-start gap-2 text-sm",
+            vote.pinned && "bg-amber-50 dark:bg-amber-500/10 -mx-2 px-2 py-1.5 rounded-md"
+          )}
+        >
+          {vote.pinned && (
+            <Pin className="size-3 text-amber-500 shrink-0 mt-0.5" />
+          )}
+          <div className="size-5 rounded-full bg-muted flex items-center justify-center text-[8px] font-semibold text-muted-foreground shrink-0 mt-0.5">
+            {getInitials(vote.voterName)}
           </div>
-          <div className="space-y-2 pl-3 border-l-2 border-muted">
-            {session.votes
-              .filter((v) => v.comment)
-              .map((v) => (
-                <div key={v.id} className="text-sm">
-                  <p className="italic text-muted-foreground">
-                    &ldquo;{v.comment}&rdquo;
-                  </p>
-                  <p className="text-xs text-muted-foreground/60">
-                    — {v.voterName}
-                  </p>
-                </div>
-              ))}
+          <div className="min-w-0 flex-1">
+            <span className="font-medium text-xs">{vote.voterName}</span>
+            <p className="text-muted-foreground text-xs leading-relaxed">{vote.comment}</p>
           </div>
+          {isCreator && onPinVote && (
+            <button
+              className={cn(
+                "shrink-0 p-1 rounded hover:bg-muted transition-colors",
+                vote.pinned ? "text-amber-500" : "text-muted-foreground/50 hover:text-muted-foreground"
+              )}
+              onClick={() => onPinVote(vote.id, !vote.pinned)}
+              title={vote.pinned ? "Unpin comment" : "Pin comment"}
+            >
+              {vote.pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+            </button>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }

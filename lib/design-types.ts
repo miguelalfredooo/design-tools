@@ -12,8 +12,36 @@ export interface ExplorationOption {
   mediaUrl?: string;
   position: number;
   rationale?: string;
+  suggested?: boolean;
+  suggestedBy?: string;
   /** @deprecated Use mediaUrl instead */
   imageUrl?: string;
+}
+
+export interface Reaction {
+  id: string;
+  sessionId: string;
+  optionId: string;
+  voterId: string;
+  createdAt: number;
+}
+
+export interface ReactionRow {
+  id: string;
+  session_id: string;
+  option_id: string;
+  voter_id: string;
+  created_at: string;
+}
+
+export function reactionFromRow(row: ReactionRow): Reaction {
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    optionId: row.option_id,
+    voterId: row.voter_id,
+    createdAt: new Date(row.created_at).getTime(),
+  };
 }
 
 export interface Vote {
@@ -22,6 +50,7 @@ export interface Vote {
   voterId: string;
   voterName: string;
   comment?: string;
+  pinned?: boolean;
   effort?: EffortLevel;
   impact?: EffortLevel;
   createdAt: number;
@@ -45,40 +74,6 @@ export interface ExplorationSession {
   phase: Phase;
   creatorToken: string;
   createdAt: number;
-}
-
-// --- Comments ---
-
-export interface DesignComment {
-  id: string;
-  sessionId: string;
-  optionId: string;
-  voterId: string;
-  voterName: string;
-  body: string;
-  createdAt: number;
-}
-
-export interface DesignCommentRow {
-  id: string;
-  session_id: string;
-  option_id: string;
-  voter_id: string;
-  voter_name: string;
-  body: string;
-  created_at: string;
-}
-
-export function commentFromRow(row: DesignCommentRow): DesignComment {
-  return {
-    id: row.id,
-    sessionId: row.session_id,
-    optionId: row.option_id,
-    voterId: row.voter_id,
-    voterName: row.voter_name,
-    body: row.body,
-    createdAt: new Date(row.created_at).getTime(),
-  };
 }
 
 // --- Supabase row types (snake_case, matching DB columns) ---
@@ -109,6 +104,8 @@ export interface VotingOptionRow {
   rationale: string | null;
   effort: string | null;
   impact: string | null;
+  suggested: boolean | null;
+  suggested_by: string | null;
   created_at: string;
 }
 
@@ -119,6 +116,7 @@ export interface VotingVoteRow {
   voter_id: string;
   voter_name: string;
   comment: string | null;
+  pinned: boolean | null;
   effort: string | null;
   impact: string | null;
   created_at: string;
@@ -162,6 +160,49 @@ export function optionFromRow(row: VotingOptionRow): ExplorationOption {
     mediaUrl: row.media_url ?? undefined,
     position: row.position,
     rationale: row.rationale ?? undefined,
+    suggested: row.suggested ?? undefined,
+    suggestedBy: row.suggested_by ?? undefined,
+  };
+}
+
+// --- Spatial comments ---
+
+export interface SpatialComment {
+  id: string;
+  sessionId: string;
+  optionId: string;
+  voterId: string;
+  voterName: string;
+  body: string;
+  xPct: number;
+  yPct: number;
+  createdAt: number;
+}
+
+export interface DesignCommentRow {
+  id: string;
+  session_id: string;
+  option_id: string;
+  voter_id: string;
+  voter_name: string;
+  body: string;
+  x_pct: number | null;
+  y_pct: number | null;
+  created_at: string;
+}
+
+export function spatialCommentFromRow(row: DesignCommentRow): SpatialComment | null {
+  if (row.x_pct == null || row.y_pct == null) return null;
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    optionId: row.option_id,
+    voterId: row.voter_id,
+    voterName: row.voter_name,
+    body: row.body,
+    xPct: row.x_pct,
+    yPct: row.y_pct,
+    createdAt: new Date(row.created_at).getTime(),
   };
 }
 
@@ -172,6 +213,7 @@ export function voteFromRow(row: VotingVoteRow): Vote {
     voterId: row.voter_id,
     voterName: row.voter_name,
     comment: row.comment ?? undefined,
+    pinned: row.pinned ?? undefined,
     effort: (row.effort as EffortLevel) ?? undefined,
     impact: (row.impact as EffortLevel) ?? undefined,
     createdAt: new Date(row.created_at).getTime(),
