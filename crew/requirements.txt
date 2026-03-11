@@ -1,0 +1,7 @@
+crewai==1.10.1
+litellm
+fastapi
+uvicorn[standard]
+supabase
+python-dotenv
+sse-starlette

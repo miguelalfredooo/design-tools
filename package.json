@@ -6,7 +6,8 @@
     "dev": "next dev --port 3500",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "crew": "cd crew && ./start.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

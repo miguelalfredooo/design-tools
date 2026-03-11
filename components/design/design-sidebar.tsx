@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { Layers, Plus, Bird, Sun, Moon, Lock, Unlock, FlaskConical, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Layers, Plus, Bird, Sun, Moon, Lock, Unlock, FlaskConical, Brain, PanelLeftClose, PanelLeft } from "lucide-react";
 import { NotificationBell } from "@/components/design/notification-bell";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/use-admin";
@@ -17,6 +17,7 @@ export function DesignSidebar() {
 
   const isProjects = pathname === "/" || pathname.startsWith("/explorations");
   const isInsights = pathname.startsWith("/research");
+  const isDesignOps = pathname.startsWith("/design-ops");
 
   const handleAdminToggle = async () => {
     if (isAdmin) {
@@ -32,6 +33,7 @@ export function DesignSidebar() {
   const navItems = [
     { href: "/", icon: Layers, label: "Projects", active: isProjects },
     { href: "/research", icon: FlaskConical, label: "Insights", active: isInsights },
+    { href: "/design-ops", icon: Brain, label: "Design Ops", active: isDesignOps },
   ];
 
   return (
