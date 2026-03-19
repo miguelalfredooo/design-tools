@@ -208,17 +208,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       const revealedIds = sessions.filter((s) => s.phase === "revealed").map((s) => s.id);
 
-      const [optionsRes, voteCountsPromises, votesRes] = await Promise.all([
+      const [optionsRes, allVotesRes, votesRes] = await Promise.all([
         supabase
           .from("voting_options")
           .select("*")
           .in("session_id", sessionIds)
           .order("position"),
-        Promise.all(
-          sessionIds.map((sid) =>
-            supabase!.rpc("get_vote_count", { p_session_id: sid })
-          )
-        ),
+        supabase
+          .from("voting_votes")
+          .select("session_id, voter_token")
+          .in("session_id", sessionIds),
         revealedIds.length > 0
           ? supabase
               .from("voting_votes")
@@ -229,9 +228,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       const allOptions = optionsRes.data ?? [];
       const allVotes = votesRes.data ?? [];
-      const voteCounts = new Map(
-        sessionIds.map((sid, i) => [sid, voteCountsPromises[i].data ?? 0])
-      );
+      const allVotesForCounting = allVotesRes.data ?? [];
+
+      // Count distinct voters per session
+      const voteCounts = new Map<string, number>();
+      sessionIds.forEach((sid) => {
+        const distinctVoters = new Set(
+          allVotesForCounting
+            .filter((v) => v.session_id === sid)
+            .map((v) => v.voter_token)
+        );
+        voteCounts.set(sid, distinctVoters.size);
+      });
 
       setMySessions(
         sessions.map((s) =>
@@ -270,17 +278,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       const revealedIds = sessions.filter((s) => s.phase === "revealed").map((s) => s.id);
 
-      const [optionsRes, voteCountsPromises, votesRes] = await Promise.all([
+      const [optionsRes, allVotesRes, votesRes] = await Promise.all([
         supabase
           .from("voting_options")
           .select("*")
           .in("session_id", sessionIds)
           .order("position"),
-        Promise.all(
-          sessionIds.map((sid) =>
-            supabase!.rpc("get_vote_count", { p_session_id: sid })
-          )
-        ),
+        supabase
+          .from("voting_votes")
+          .select("session_id, voter_token")
+          .in("session_id", sessionIds),
         revealedIds.length > 0
           ? supabase
               .from("voting_votes")
@@ -291,9 +298,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       const allOptions = optionsRes.data ?? [];
       const allVotes = votesRes.data ?? [];
-      const voteCounts = new Map(
-        sessionIds.map((sid, i) => [sid, voteCountsPromises[i].data ?? 0])
-      );
+      const allVotesForCounting = allVotesRes.data ?? [];
+
+      // Count distinct voters per session
+      const voteCounts = new Map<string, number>();
+      sessionIds.forEach((sid) => {
+        const distinctVoters = new Set(
+          allVotesForCounting
+            .filter((v) => v.session_id === sid)
+            .map((v) => v.voter_token)
+        );
+        voteCounts.set(sid, distinctVoters.size);
+      });
 
       setAllSessions(
         sessions.map((s) =>

@@ -8,15 +8,20 @@ export async function GET(
   const { id } = await params;
   const db = getSupabaseAdmin();
 
-  const [sessionRes, optionsRes, voteCountRes] = await Promise.all([
+  const [sessionRes, optionsRes, allVotesRes] = await Promise.all([
     db.from("voting_sessions").select("*").eq("id", id).single(),
     db.from("voting_options").select("*").eq("session_id", id).order("position"),
-    db.rpc("get_vote_count", { p_session_id: id }),
+    db.from("voting_votes").select("session_id, voter_token").eq("session_id", id),
   ]);
 
   if (sessionRes.error || !sessionRes.data) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+
+  // Count distinct voters
+  const allVotes = allVotesRes.data ?? [];
+  const distinctVoters = new Set(allVotes.map((v) => v.voter_token));
+  const voteCount = distinctVoters.size;
 
   // During revealed phase, return all votes
   // During voting phase, return only the requesting voter's vote (for undo)
@@ -45,7 +50,7 @@ export async function GET(
     session: sessionRes.data,
     options: optionsRes.data ?? [],
     votes,
-    voteCount: voteCountRes.data ?? 0,
+    voteCount,
   });
 }
 

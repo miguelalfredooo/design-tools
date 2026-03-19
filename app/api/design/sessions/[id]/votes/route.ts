@@ -88,9 +88,13 @@ export async function POST(
   }
 
   // Check if we should auto-reveal
-  const { data: voteCount } = await db.rpc("get_vote_count", {
-    p_session_id: sessionId,
-  });
+  const { data: allVotes } = await db
+    .from("voting_votes")
+    .select("voter_token")
+    .eq("session_id", sessionId);
+
+  const distinctVoters = new Set((allVotes ?? []).map((v) => v.voter_token));
+  const voteCount = distinctVoters.size;
 
   if (voteCount >= session.participant_count) {
     await db
