@@ -1,12 +1,12 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { Layers, Users, Trash2, Plus } from "lucide-react";
 import { useSessions, getCreatorToken } from "@/lib/design-store";
 import { useAdmin } from "@/hooks/use-admin";
 import { FeedOptionPost } from "@/components/design/feed-option-post";
 import { EmptySessionState } from "@/components/design/empty-session-state";
+import { CreateSessionDialog } from "@/components/design/create-session-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -65,12 +65,12 @@ function DesignHomeFeed() {
         <div className="w-full min-w-0 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-2xl font-black tracking-tight">Projects</h2>
-            <Link href="/?newSession=true">
+            <CreateSessionDialog>
               <Button className="gap-2">
                 <Plus className="size-4" />
                 New Session
               </Button>
-            </Link>
+            </CreateSessionDialog>
           </div>
 
           {/* Tabs */}
