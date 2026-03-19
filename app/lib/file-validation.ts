@@ -46,19 +46,28 @@ export function validateFile(file: File): FileValidationResult {
   };
 
   const validExts = mimeToExt[file.type] || [];
-  if (!ext || !validExts.includes(ext)) {
+  if (!ext) {
     return {
       valid: false,
-      error: "File extension does not match file type",
+      error: "File must have an extension (e.g., .jpg, .png, .webp)",
+    };
+  }
+  if (!validExts.includes(ext)) {
+    return {
+      valid: false,
+      error: `File extension .${ext} does not match file type ${file.type}`,
     };
   }
 
-  // Check for suspicious patterns (double extensions, null bytes)
-  if (
-    file.name.includes(".") &&
-    file.name.split(".").filter((p) => p).length > 2
-  ) {
-    return { valid: false, error: "Invalid filename" };
+  // Check for suspicious patterns (double extensions like .php.jpg, .exe.jpg, etc.)
+  // Only flag if the base filename (before last extension) ends with a known dangerous extension
+  const baseName = file.name.slice(0, -(ext?.length || 0) - 1);
+  const suspiciousExtensions = ["php", "exe", "sh", "bat", "cmd", "scr", "vbs"];
+  if (baseName.includes(".")) {
+    const innerExt = baseName.split(".").pop()?.toLowerCase();
+    if (innerExt && suspiciousExtensions.includes(innerExt)) {
+      return { valid: false, error: "Invalid filename" };
+    }
   }
 
   if (file.name.includes("\0")) {
