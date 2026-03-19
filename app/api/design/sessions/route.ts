@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
+import { validateSessionCreate } from "@/app/lib/input-validation";
 
 export async function POST(request: Request) {
   const body = await request.json();
+  const validation = validateSessionCreate(body);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.errors },
+      { status: 400 }
+    );
+  }
   const { title, description, participantCount, options, previewUrl, creatorToken, problem, goal, audience, constraints } = body;
 
   if (!title?.trim() || !creatorToken) {
