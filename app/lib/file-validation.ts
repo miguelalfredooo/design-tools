@@ -1,0 +1,69 @@
+/**
+ * File validation utilities for design preview images.
+ * Prevents malicious uploads: oversized files, wrong MIME types, suspicious extensions.
+ */
+
+const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+/**
+ * Validates a file before upload.
+ * Checks: MIME type, file size, extension safety, filename safety.
+ */
+export function validateFile(file: File): FileValidationResult {
+  // Check file exists
+  if (!file) {
+    return { valid: false, error: "No file provided" };
+  }
+
+  // Check MIME type
+  if (!ALLOWED_MIMES.includes(file.type)) {
+    return {
+      valid: false,
+      error: "Invalid file type. Accepted: JPEG, PNG, WebP",
+    };
+  }
+
+  // Check file size (15 MB max)
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File exceeds 15 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)`,
+    };
+  }
+
+  // Extract extension and validate it matches MIME type
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  const mimeToExt: Record<string, string[]> = {
+    "image/jpeg": ["jpg", "jpeg"],
+    "image/png": ["png"],
+    "image/webp": ["webp"],
+  };
+
+  const validExts = mimeToExt[file.type] || [];
+  if (!ext || !validExts.includes(ext)) {
+    return {
+      valid: false,
+      error: "File extension does not match file type",
+    };
+  }
+
+  // Check for suspicious patterns (double extensions, null bytes)
+  if (
+    file.name.includes(".") &&
+    file.name.split(".").filter((p) => p).length > 2
+  ) {
+    return { valid: false, error: "Invalid filename" };
+  }
+
+  if (file.name.includes("\0")) {
+    return { valid: false, error: "Invalid filename" };
+  }
+
+  return { valid: true };
+}
