@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { verifySessionToken } from "@/app/lib/session";
+import { validateOptionInput } from "@/app/lib/input-validation";
 
 function isValidAdmin(adminPassword: string | undefined): boolean {
   const correct = process.env.DESIGN_TOOLS_PASSWORD;
@@ -25,6 +26,13 @@ export async function POST(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
+  const validation = validateOptionInput(body);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.errors },
+      { status: 400 }
+    );
+  }
   const { title, description, mediaType, mediaUrl, creatorToken, adminPassword, rationale, suggested, suggestedBy } = body;
 
   if (!title?.trim()) {
@@ -103,6 +111,13 @@ export async function PATCH(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
+  const validation = validateOptionInput(body);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.errors },
+      { status: 400 }
+    );
+  }
   const { optionId, creatorToken, adminPassword, title, description, mediaType, mediaUrl } = body;
 
   if (!optionId) {
