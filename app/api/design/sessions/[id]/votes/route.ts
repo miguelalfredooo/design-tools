@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
+import { verifySessionToken } from "@/lib/session";
+
+function extractSessionToken(request: Request): string | null {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith("sessionToken=")) {
+      return trimmed.substring("sessionToken=".length);
+    }
+  }
+  return null;
+}
 
 export async function POST(
   request: Request,
@@ -121,6 +134,10 @@ export async function PATCH(
     );
   }
 
+  // Check sessionToken first (preferred method)
+  const sessionToken = extractSessionToken(request);
+  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+
   const db = getSupabaseAdmin();
 
   // Verify session exists
@@ -134,7 +151,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  // Auth: must be creator or admin
+  // Auth: sessionToken valid OR must be creator or admin
   const isCreator = creatorToken && session.creator_token === creatorToken;
   let isAdmin = false;
   if (adminPassword) {
@@ -142,7 +159,7 @@ export async function PATCH(
     isAdmin = !!expectedPassword && adminPassword === expectedPassword;
   }
 
-  if (!isCreator && !isAdmin) {
+  if (!sessionValid && !isCreator && !isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
