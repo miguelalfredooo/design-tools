@@ -65,6 +65,25 @@ function ChartContainer({
     ...style,
   }
 
+  React.useEffect(() => {
+    // Suppress Recharts ResponsiveContainer dimension warning in development
+    if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+      const originalWarn = console.warn
+      console.warn = (...args: any[]) => {
+        if (
+          args[0]?.includes?.("width(-1)") ||
+          args[0]?.includes?.("height(-1)")
+        ) {
+          return
+        }
+        originalWarn(...args)
+      }
+      return () => {
+        console.warn = originalWarn
+      }
+    }
+  }, [])
+
   return (
     <ChartContext.Provider value={{ config }}>
       <div
