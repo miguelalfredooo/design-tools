@@ -340,7 +340,7 @@ export default function ReplaysPage() {
                               Top Friction Patterns
                             </p>
                           </div>
-                          <div style={{ width: "100%", height: 140, minWidth: 0 }}>
+                          <div style={{ display: "block", width: "100%", height: 140, overflow: "hidden" }}>
                             <ChartContainer
                               config={frictionChartConfig}
                               className="h-[140px] w-full"

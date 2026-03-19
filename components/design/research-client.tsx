@@ -388,7 +388,7 @@ function OverviewTab({ batch }: Props) {
                     <CardDescription>Frequency across sessions</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div style={{ width: "100%", height: 300, minWidth: 0 }}>
+                    <div style={{ display: "block", width: "100%", height: 300, overflow: "hidden" }}>
                       <ChartContainer config={themeChartConfig} className="h-[300px] w-full">
                         <BarChart
                           accessibilityLayer
@@ -542,7 +542,7 @@ function OverviewTab({ batch }: Props) {
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-8">
-                        <div style={{ width: 160, height: 160, minWidth: 0, flexShrink: 0 }}>
+                        <div style={{ display: "block", width: 160, height: 160, overflow: "hidden", flexShrink: 0 }}>
                           <ChartContainer config={alignmentConfig} className="h-[160px] w-[160px] shrink-0">
                             <PieChart>
                               <ChartTooltip content={<ChartTooltipContent />} />
@@ -1480,7 +1480,7 @@ function ReplaysTab() {
                       Top Friction Patterns
                     </p>
                   </div>
-                  <div style={{ width: "100%", height: 140, minWidth: 0 }}>
+                  <div style={{ display: "block", width: "100%", height: 140, overflow: "hidden" }}>
                     <ChartContainer config={frictionChartConfig} className="h-[140px] w-full">
                       <BarChart
                         data={synth.frictions.slice(0, 5)}
