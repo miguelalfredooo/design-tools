@@ -14,6 +14,164 @@ import {
   type SynthesisCardInDepthProps,
 } from "@/components/design/synthesis-cards";
 
+// Parser functions for tier-specific crew output formats
+function parseQuickOutput(body: string): { headline: string; keyPoints: string[] } {
+  const lines = body.split("\n").filter((l) => l.trim());
+
+  // Look for HEADLINE or KEY PATTERNS sections
+  let headline = "";
+  const keyPoints: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes("HEADLINE:")) {
+      headline = line.replace("HEADLINE:", "").trim();
+    } else if (line.includes("KEY PATTERNS:")) {
+      // Collect bullet points until next section
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].includes(":") && !lines[j].startsWith("-") && !lines[j].startsWith("•")) {
+          break;
+        }
+        const clean = lines[j].replace(/^[-•]\s*/, "").trim();
+        if (clean) keyPoints.push(clean);
+      }
+      break;
+    }
+  }
+
+  // Fallback: first line as headline, next 3 as key points
+  if (!headline) {
+    headline = lines[0] || "";
+    keyPoints.push(...lines.slice(1, 4));
+  }
+
+  return {
+    headline,
+    keyPoints: keyPoints.slice(0, 3), // Ensure max 3
+  };
+}
+
+function parseBalancedOutput(body: string): {
+  finding: string;
+  evidence: string[];
+  nextSteps: string;
+} {
+  const lines = body.split("\n").filter((l) => l.trim());
+
+  let finding = "";
+  const evidence: string[] = [];
+  let nextSteps = "";
+  let inEvidenceSection = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.includes("SUBJECT:")) {
+      finding = line.replace("SUBJECT:", "").trim();
+    } else if (line.includes("FINDINGS:") || line.includes("EVIDENCE:")) {
+      inEvidenceSection = true;
+    } else if (line.includes("NEXT STEPS:") || line.includes("NEXT STEP:")) {
+      inEvidenceSection = false;
+      nextSteps = line.replace(/NEXT STEPS?:/, "").trim();
+      // Collect remaining content as next steps
+      if (!nextSteps) {
+        for (let j = i + 1; j < lines.length; j++) {
+          if (!lines[j].includes(":")) {
+            nextSteps = lines[j].replace(/^[-•]\s*/, "").trim();
+            break;
+          }
+        }
+      }
+    } else if (inEvidenceSection && (line.startsWith("-") || line.startsWith("•"))) {
+      const clean = line.replace(/^[-•]\s*/, "").trim();
+      if (clean && evidence.length < 3) {
+        evidence.push(clean);
+      }
+    }
+  }
+
+  // Fallback
+  if (!finding) finding = lines[0] || "";
+  if (!nextSteps) nextSteps = lines[lines.length - 1] || "";
+
+  return { finding, evidence, nextSteps };
+}
+
+function parseInDepthOutput(body: string): {
+  finding: string;
+  evidence: string[];
+  competingInterpretations?: string;
+  assumptions?: string;
+  sources?: string[];
+  nextSteps: string;
+  missingContext?: string;
+} {
+  const lines = body.split("\n").filter((l) => l.trim());
+
+  let finding = "";
+  const evidence: string[] = [];
+  let competingInterpretations = "";
+  let assumptions = "";
+  const sources: string[] = [];
+  let nextSteps = "";
+  let missingContext = "";
+
+  let currentSection = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.includes("SUBJECT:")) {
+      finding = line.replace("SUBJECT:", "").trim();
+      currentSection = "subject";
+    } else if (line.includes("ASSUMPTIONS:")) {
+      currentSection = "assumptions";
+      assumptions = line.replace("ASSUMPTIONS:", "").trim();
+    } else if (line.includes("FINDINGS:") || line.includes("EVIDENCE:")) {
+      currentSection = "evidence";
+    } else if (line.includes("COMPETING INTERPRETATIONS:")) {
+      currentSection = "competing";
+      competingInterpretations = line.replace("COMPETING INTERPRETATIONS:", "").trim();
+    } else if (line.includes("NEXT STEPS:")) {
+      currentSection = "next";
+      nextSteps = line.replace("NEXT STEPS:", "").trim();
+    } else if (line.includes("MISSING CONTEXT:")) {
+      currentSection = "missing";
+      missingContext = line.replace("MISSING CONTEXT:", "").trim();
+    } else if (line.includes("SOURCES:")) {
+      currentSection = "sources";
+    } else if (
+      currentSection === "evidence" &&
+      (line.startsWith("-") || line.startsWith("•"))
+    ) {
+      const clean = line.replace(/^[-•]\s*/, "").trim();
+      if (clean && evidence.length < 4) {
+        evidence.push(clean);
+      }
+    } else if (
+      currentSection === "sources" &&
+      (line.startsWith("-") || line.startsWith("•"))
+    ) {
+      const clean = line.replace(/^[-•]\s*/, "").trim();
+      if (clean) sources.push(clean);
+    }
+  }
+
+  // Fallback for finding
+  if (!finding) finding = lines[0] || "";
+  if (!nextSteps) nextSteps = lines[lines.length - 1] || "";
+
+  return {
+    finding,
+    evidence,
+    ...(competingInterpretations && { competingInterpretations }),
+    ...(assumptions && { assumptions }),
+    ...(sources.length > 0 && { sources }),
+    nextSteps,
+    ...(missingContext && { missingContext }),
+  };
+}
+
 interface DesignOpsTimelineProps {
   messages: AgentMessage[];
 }
@@ -48,48 +206,41 @@ export function DesignOpsTimeline({ messages }: DesignOpsTimelineProps) {
         const Icon = agent.icon;
         const isLast = i === messages.length - 1;
 
+        // Common props for all card types
+        const commonProps = {
+          from: msg.from as any,
+          fromName: msg.fromName || "",
+          subject: msg.subject,
+          confidence: msg.confidence as any,
+          timestamp: msg.timestamp,
+          isLast,
+        };
+
+        // Determine tier (default to balanced if not set)
+        const tier = msg.tier || "balanced";
+
         return (
           <div key={i} className="relative">
             {!isLast && <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />}
 
             {/* Route to correct card component based on tier */}
-            {msg.tier === "quick" ? (
+            {tier === "quick" ? (
               <SynthesisCardQuick
-                from={msg.from as any}
-                fromName={msg.fromName || ""}
-                subject={msg.subject}
-                confidence={msg.confidence as any}
-                timestamp={msg.timestamp}
+                {...commonProps}
                 tier="quick"
-                headline={msg.subject}
-                keyPoints={(msg.body || "").split("\n").filter(l => l.trim()).slice(0, 3)}
-                isLast={isLast}
+                {...parseQuickOutput(msg.body || "")}
               />
-            ) : msg.tier === "in-depth" ? (
+            ) : tier === "in-depth" ? (
               <SynthesisCardInDepth
-                from={msg.from as any}
-                fromName={msg.fromName || ""}
-                subject={msg.subject}
-                confidence={msg.confidence as any}
-                timestamp={msg.timestamp}
+                {...commonProps}
                 tier="in-depth"
-                finding={msg.subject}
-                evidence={[]}
-                nextSteps={msg.body || ""}
-                isLast={isLast}
+                {...parseInDepthOutput(msg.body || "")}
               />
             ) : (
               <SynthesisCardBalanced
-                from={msg.from as any}
-                fromName={msg.fromName || ""}
-                subject={msg.subject}
-                confidence={msg.confidence as any}
-                timestamp={msg.timestamp}
+                {...commonProps}
                 tier="balanced"
-                finding={msg.subject}
-                evidence={[]}
-                nextSteps={msg.body || ""}
-                isLast={isLast}
+                {...parseBalancedOutput(msg.body || "")}
               />
             )}
           </div>

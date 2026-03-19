@@ -111,6 +111,7 @@ export function DesignOpsCrewRunner({
                   body: data.body || "",
                   nextStep: data.next_step || data.nextStep || "",
                   timestamp: data.timestamp || new Date().toISOString(),
+                  tier: synthesisT, // Pass the selected synthesis tier to each message
                 };
                 messages.push(msg);
                 onMessages([...messages]);
