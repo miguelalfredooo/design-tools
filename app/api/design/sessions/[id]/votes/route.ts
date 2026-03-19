@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
 import { verifySessionToken } from "@/app/lib/session";
+import { validateVoteInput } from "@/app/lib/input-validation";
 
 function extractSessionToken(request: Request): string | null {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -21,6 +22,13 @@ export async function POST(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
+  const validation = validateVoteInput(body);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.errors },
+      { status: 400 }
+    );
+  }
   const { optionId, voterId, voterName, comment } = body;
 
   if (!optionId || !voterId || !voterName?.trim()) {
