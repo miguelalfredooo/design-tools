@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { verifySessionToken } from "@/lib/session";
+import { verifySessionToken } from "@/app/lib/session";
 
 export async function GET(
   _request: Request,

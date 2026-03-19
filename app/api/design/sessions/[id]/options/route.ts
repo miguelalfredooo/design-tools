@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { verifySessionToken } from "@/lib/session";
+import { verifySessionToken } from "@/app/lib/session";
 
 function isValidAdmin(adminPassword: string | undefined): boolean {
   const correct = process.env.DESIGN_TOOLS_PASSWORD;

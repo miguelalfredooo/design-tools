@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
-import { verifySessionToken } from "@/lib/session";
+import { verifySessionToken } from "@/app/lib/session";
 
 function extractSessionToken(request: Request): string | null {
   const cookieHeader = request.headers.get("cookie") || "";
