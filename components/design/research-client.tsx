@@ -563,7 +563,6 @@ function OverviewTab({ batch }: Props) {
                             </PieChart>
                           </ChartContainer>
                         </div>
-                        </div>
                         <div className="space-y-2">
                           {alignmentData.map((d) => (
                             <div key={d.name} className="flex items-center gap-2">
