@@ -54,6 +54,9 @@ function ChartContainer({
   const heightMatch = className?.match(/h-\[([^\]]+)\]/)
   const widthMatch = className?.match(/w-\[([^\]]+)\]/)
 
+  // Parse numeric height for minHeight prop
+  const heightValue = heightMatch ? parseInt(heightMatch[1]) : undefined
+
   const inlineStyle: React.CSSProperties = {
     display: "flex",
     justifyContent: "center",
@@ -75,7 +78,7 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
+        <RechartsPrimitive.ResponsiveContainer width="100%" height="100%" minHeight={heightValue}>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>
