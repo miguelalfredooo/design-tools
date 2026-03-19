@@ -62,16 +62,24 @@ export function validateFile(file: File): FileValidationResult {
   // Check for suspicious patterns (double extensions like .php.jpg, .exe.jpg, etc.)
   // Only flag if the base filename (before last extension) ends with a known dangerous extension
   const baseName = file.name.slice(0, -(ext?.length || 0) - 1);
+
+  // Reject if basename is empty (file named only ".ext")
+  if (!baseName || baseName.length === 0) {
+    return { valid: false, error: "Invalid filename" };
+  }
+
+  // Check for suspicious nested extensions
   const suspiciousExtensions = ["php", "exe", "sh", "bat", "cmd", "scr", "vbs"];
   if (baseName.includes(".")) {
     const innerExt = baseName.split(".").pop()?.toLowerCase();
     if (innerExt && suspiciousExtensions.includes(innerExt)) {
-      return { valid: false, error: "Invalid filename" };
+      return { valid: false, error: "File contains suspicious extension pattern (e.g., .php.jpg)" };
     }
   }
 
+  // Reject null bytes in filename
   if (file.name.includes("\0")) {
-    return { valid: false, error: "Invalid filename" };
+    return { valid: false, error: "Invalid filename: contains null bytes" };
   }
 
   return { valid: true };
