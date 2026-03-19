@@ -18,6 +18,7 @@ export interface AgentMessage {
   body: string;
   nextStep: string;
   timestamp: string;
+  tier?: "quick" | "balanced" | "in-depth";
 }
 
 export interface CrewRun {
