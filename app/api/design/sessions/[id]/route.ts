@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { verifySessionToken } from "@/app/lib/session";
+import { validateSessionUpdate } from "@/app/lib/input-validation";
 
 export async function GET(
   _request: Request,
@@ -78,6 +79,13 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
+  const validation = validateSessionUpdate(body);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.errors },
+      { status: 400 }
+    );
+  }
   const { creatorToken, adminPassword, phase, participantCount } = body;
 
   // Check sessionToken first (preferred method)
