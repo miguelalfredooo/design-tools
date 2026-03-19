@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploration B — Left Border + Earth Tones</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #111110;
+      color: #d6d3cd;
+      padding: 48px;
+      min-height: 100vh;
+    }
+
+    .meta {
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #262520;
+    }
+
+    .meta h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b6860;
+      margin-bottom: 8px;
+    }
+
+    .meta p {
+      font-size: 13px;
+      color: #4d4a44;
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 32px;
+      max-width: 640px;
+      background: #1a1917;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .view-toggle button {
+      flex: 1;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      border: none;
+      background: transparent;
+      color: #6b6860;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .view-toggle button.active {
+      background: #262520;
+      color: #d6d3cd;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 640px;
+    }
+
+    .card {
+      display: flex;
+      border-radius: 10px;
+      background: #1a1917;
+      overflow: hidden;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .card:hover {
+      background: #1f1e1b;
+    }
+
+    .card-border {
+      width: 4px;
+      flex-shrink: 0;
+    }
+
+    .border-risk { background: #c2553a; }
+    .border-opportunity { background: #7a8a3e; }
+    .border-pattern { background: #5e8a82; }
+
+    .card-body {
+      flex: 1;
+      padding: 16px 20px;
+      min-width: 0;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .card-type {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .type-risk { color: #d4745e; }
+    .type-opportunity { color: #a3b35a; }
+    .type-pattern { color: #7cb5ab; }
+
+    .card-divider {
+      width: 1px;
+      height: 12px;
+      background: #333028;
+    }
+
+    .card-source-inline {
+      font-size: 11px;
+      color: #4d4a44;
+    }
+
+    .card-text {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #c4c0b8;
+    }
+
+    .card-detail {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #262520;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #7a776e;
+    }
+
+    .card.expanded .card-detail { display: block; }
+
+    /* Shared view */
+    body.shared-view .card-source-inline { display: none; }
+    body.shared-view .card-divider { display: none; }
+    body.shared-view .card-detail { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="meta">
+    <h1>Exploration B — Left Border + Earth Tones</h1>
+    <p>
+      A thick left border carries the type signal. Colors shift from traffic-light primaries
+      to earth tones: terracotta for risk, olive for opportunity, sage for pattern. Warmer,
+      quieter palette. The border is the only color — everything else is neutral. Type label
+      sits inline with source for density.
+    </p>
+  </div>
+
+  <div class="view-toggle">
+    <button class="active" onclick="setView('private')">Private</button>
+    <button onclick="setView('shared')">Shared</button>
+  </div>
+
+  <div class="card-list">
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-border border-risk"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-risk">Risk</span>
+          <span class="card-divider"></span>
+          <span class="card-source-inline">3 of 5 participants</span>
+        </div>
+        <div class="card-text">Users abandon the session setup flow when the objective field has no guidance or examples</div>
+        <div class="card-detail">
+          Participants paused for 8–15 seconds on the objective field before either typing something generic or navigating away. Two participants explicitly said they didn't know what was expected. The empty state provides no scaffolding.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-border border-opportunity"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-opportunity">Opportunity</span>
+          <span class="card-divider"></span>
+          <span class="card-source-inline">Cross-session synthesis</span>
+        </div>
+        <div class="card-text">Confidence level in the summary strip could link directly to the supporting evidence</div>
+        <div class="card-detail">
+          PMs consistently asked "why this confidence level?" after reading the summary. A direct link from the confidence indicator to the underlying data points would eliminate this follow-up question entirely.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-border border-pattern"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-pattern">Pattern</span>
+          <span class="card-divider"></span>
+          <span class="card-source-inline">4 of 5 participants</span>
+        </div>
+        <div class="card-text">Participants consistently look for a "done" or "complete" action after reviewing results</div>
+        <div class="card-detail">
+          After reviewing results, participants looked for a way to mark the session as complete. The current flow has no explicit completion action — sessions just become inactive, creating ambiguity.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-border border-risk"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-risk">Risk</span>
+          <span class="card-divider"></span>
+          <span class="card-source-inline">PM feedback — 2 incidents</span>
+        </div>
+        <div class="card-text">The shared view exposes internal run IDs in the URL, confusing stakeholders</div>
+        <div class="card-detail">
+          Two PMs separately asked what the alphanumeric string in the shared URL meant. Internal identifiers leaking into shared surfaces undermine the "readable labels" principle.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-border border-opportunity"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-opportunity">Opportunity</span>
+          <span class="card-divider"></span>
+          <span class="card-source-inline">Workflow observation</span>
+        </div>
+        <div class="card-text">Design Ops module completion dates could auto-populate the "next steps" field</div>
+        <div class="card-detail">
+          Designers manually copy completion dates into next steps text. This is error-prone and creates drift. Auto-populating would keep them in sync and reduce a repeated manual task.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setView(mode) {
+      document.body.classList.toggle('shared-view', mode === 'shared');
+      document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === mode);
+      });
+      if (mode === 'shared') {
+        document.querySelectorAll('.card.expanded').forEach(c => c.classList.remove('expanded'));
+      }
+    }
+  </script>
+</body>
+</html>

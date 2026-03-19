@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploration C — Icon-Led Monochrome</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #09090b;
+      color: #d4d4d8;
+      padding: 48px;
+      min-height: 100vh;
+    }
+
+    .meta {
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #1e1e22;
+    }
+
+    .meta h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #52525b;
+      margin-bottom: 8px;
+    }
+
+    .meta p {
+      font-size: 13px;
+      color: #3f3f46;
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 32px;
+      max-width: 640px;
+      background: #131316;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .view-toggle button {
+      flex: 1;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      border: none;
+      background: transparent;
+      color: #52525b;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .view-toggle button.active {
+      background: #1e1e22;
+      color: #d4d4d8;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 640px;
+    }
+
+    .card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px;
+      background: #131316;
+      border: 1px solid #1e1e22;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .card:hover {
+      border-color: #2a2a30;
+      background: #17171b;
+    }
+
+    .card-icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .icon-risk {
+      background: #1c1215;
+      border: 1px solid #2d1a1e;
+    }
+
+    .icon-opportunity {
+      background: #111c14;
+      border: 1px solid #1a2d1e;
+    }
+
+    .icon-pattern {
+      background: #111a1c;
+      border: 1px solid #1a282d;
+    }
+
+    .card-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #52525b;
+      margin-bottom: 6px;
+    }
+
+    .card-text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.55;
+      color: #a1a1aa;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .card-source {
+      font-size: 12px;
+      color: #3f3f46;
+    }
+
+    .card-detail {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #1e1e22;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #63636b;
+    }
+
+    .card.expanded .card-detail { display: block; }
+
+    /* Shared view */
+    body.shared-view .card-source { display: none; }
+    body.shared-view .card-footer { display: none; }
+    body.shared-view .card-detail { display: none !important; }
+    body.shared-view .card-label { display: none; }
+
+    body.shared-view .card {
+      padding: 16px 20px;
+    }
+
+    body.shared-view .card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="meta">
+    <h1>Exploration C — Icon-Led Monochrome</h1>
+    <p>
+      Type signalled by a shape icon in a muted container — not primarily by color.
+      The icon encodes meaning (triangle for risk, arrow-up for opportunity, layers for pattern).
+      Almost monochrome palette — color only whispers in the icon background.
+      Typography does the heavy lifting. Shared view strips labels and compresses to essentials.
+    </p>
+  </div>
+
+  <div class="view-toggle">
+    <button class="active" onclick="setView('private')">Private</button>
+    <button onclick="setView('shared')">Shared</button>
+  </div>
+
+  <div class="card-list">
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-icon icon-risk">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2L14 13H2L8 2Z" stroke="#a14a3a" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M8 7V9.5" stroke="#a14a3a" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="8" cy="11.5" r="0.75" fill="#a14a3a"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">Risk</div>
+        <div class="card-text">Users abandon the session setup flow when the objective field has no guidance or examples</div>
+        <div class="card-footer">
+          <span class="card-source">3 of 5 participants — Session #12, #14, #15</span>
+        </div>
+        <div class="card-detail">
+          Participants paused for 8–15 seconds on the objective field before either typing something generic or navigating away. Two participants explicitly said they didn't know what was expected. The empty state provides no scaffolding.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-icon icon-opportunity">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 12V4" stroke="#5a8a4a" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M4.5 7L8 3.5L11.5 7" stroke="#5a8a4a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">Opportunity</div>
+        <div class="card-text">Confidence level in the summary strip could link directly to the supporting evidence</div>
+        <div class="card-footer">
+          <span class="card-source">Cross-session synthesis</span>
+        </div>
+        <div class="card-detail">
+          PMs consistently asked "why this confidence level?" after reading the summary. A direct link would eliminate this follow-up question entirely.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-icon icon-pattern">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="3" y="3" width="10" height="3" rx="1" stroke="#4a7a8a" stroke-width="1.2"/>
+          <rect x="3" y="8" width="10" height="3" rx="1" stroke="#4a7a8a" stroke-width="1.2"/>
+          <line x1="5" y1="13" x2="11" y2="13" stroke="#4a7a8a" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">Pattern</div>
+        <div class="card-text">Participants consistently look for a "done" or "complete" action after reviewing results</div>
+        <div class="card-footer">
+          <span class="card-source">4 of 5 participants — Sessions #11–#15</span>
+        </div>
+        <div class="card-detail">
+          After reviewing results, participants looked for a way to mark the session as complete. Sessions just become inactive, creating ambiguity about done vs. paused.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-icon icon-risk">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2L14 13H2L8 2Z" stroke="#a14a3a" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M8 7V9.5" stroke="#a14a3a" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="8" cy="11.5" r="0.75" fill="#a14a3a"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">Risk</div>
+        <div class="card-text">The shared view exposes internal run IDs in the URL, confusing stakeholders</div>
+        <div class="card-footer">
+          <span class="card-source">PM feedback — 2 incidents</span>
+        </div>
+        <div class="card-detail">
+          Two PMs separately asked what the alphanumeric string in the shared URL meant. Internal identifiers in shared surfaces undermine the "readable labels" principle.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-icon icon-opportunity">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 12V4" stroke="#5a8a4a" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M4.5 7L8 3.5L11.5 7" stroke="#5a8a4a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">Opportunity</div>
+        <div class="card-text">Design Ops module completion dates could auto-populate the "next steps" field</div>
+        <div class="card-footer">
+          <span class="card-source">Workflow observation</span>
+        </div>
+        <div class="card-detail">
+          Designers manually copy completion dates into next steps. Auto-populating would keep them in sync and reduce a repeated manual task.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setView(mode) {
+      document.body.classList.toggle('shared-view', mode === 'shared');
+      document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === mode);
+      });
+      if (mode === 'shared') {
+        document.querySelectorAll('.card.expanded').forEach(c => c.classList.remove('expanded'));
+      }
+    }
+  </script>
+</body>
+</html>
