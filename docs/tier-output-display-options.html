@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tier Output Display Options</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .option {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .option-header {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fafafa;
+    }
+
+    .option-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .option-label {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .option-description {
+      font-size: 14px;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .mockup {
+      padding: 20px;
+      background: white;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Card styles */
+    .card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      background: white;
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      background: #f9f9f9;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .agent-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .card-badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .quick-bullets {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .quick-bullets li {
+      padding: 4px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .quick-bullets li:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    .balanced-section {
+      margin-bottom: 12px;
+    }
+
+    .balanced-section-title {
+      font-weight: 600;
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tier-badge-style1 {
+      display: inline-block;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .tier-quick { background: #fff3e0; color: #e65100; }
+    .tier-balanced { background: #e3f2fd; color: #1565c0; }
+    .tier-indepth { background: #f3e5f5; color: #6a1b9a; }
+
+    .card-border-quick {
+      border-left: 4px solid #ff9800;
+    }
+
+    .card-border-balanced {
+      border-left: 4px solid #2196f3;
+    }
+
+    .card-border-indepth {
+      border-left: 4px solid #9c27b0;
+    }
+
+    .collapsible {
+      margin-bottom: 12px;
+    }
+
+    .collapsible-title {
+      font-weight: 600;
+      font-size: 12px;
+      padding: 8px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .chevron-down {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>') no-repeat center;
+      background-size: contain;
+    }
+
+    .collapsible-content {
+      padding: 8px;
+      background: #fafafa;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .distinct-quick {
+      background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .distinct-balanced {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .distinct-indepth {
+      background: linear-gradient(135deg, #f3e5f5 0%, #ede7f6 100%);
+      border: 2px solid #9c27b0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .indepth-main {
+      grid-column: 1 / -1;
+    }
+
+    .indepth-sidebar {
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      border: 1px solid #9c27b0;
+    }
+
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    .pros, .cons {
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .pros {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .cons {
+      background: #ffebee;
+      color: #b71c1c;
+    }
+
+    .pros h4, .cons h4 {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .pros ul, .cons ul {
+      margin-left: 16px;
+    }
+
+    .pros li, .cons li {
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tier Output Display Options</h1>
+    <p class="subtitle">How should synthesis results render differently based on selected tier?</p>
+
+    <div class="grid">
+      <!-- Option A: Same structure, different content -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION A</div>
+          <div class="option-title">Same Structure, Variable Content</div>
+          <p class="option-description">All tiers use identical card layout. Quick shows fewer items, In-Depth shows all sections. Content determines depth.</p>
+        </div>
+        <div class="mockup">
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px;">Quick Tier Result</div>
+          <div class="card">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge">HIGH</div>
+            </div>
+            <div class="card-body">
+              <strong>Users abandon after first post due to lack of feedback</strong>
+              <ul class="quick-bullets" style="margin-top: 8px;">
+                <li>45% of new users post once then stop</li>
+                <li>Missing social signals (replies, reactions)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; margin-top: 16px;">In-Depth Tier Result</div>
+          <div class="card">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge">HIGH</div>
+            </div>
+            <div class="card-body">
+              <div class="balanced-section">
+                <div class="balanced-section-title">Finding</div>
+                Users abandon after first post due to lack of feedback
+              </div>
+              <div class="balanced-section">
+                <div class="balanced-section-title">Evidence</div>
+                <ul class="quick-bullets">
+                  <li>45% of new users post once then stop (Snowflake cohort)</li>
+                  <li>Survey: "I don't know if anyone cares" (8/12 responses)</li>
+                  <li>Missing social signals (replies, reactions)</li>
+                </ul>
+              </div>
+              <div class="balanced-section">
+                <div class="balanced-section-title">Competing Interpretation</div>
+                Could also indicate threading confusion, not engagement loss
+              </div>
+              <div class="balanced-section">
+                <div class="balanced-section-title">Next Steps</div>
+                A/B test reply notifications vs. reaction visibility
+              </div>
+            </div>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Consistent UI pattern</li>
+                <li>No new component states</li>
+                <li>Content drives depth naturally</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Cards may look empty (Quick)</li>
+                <li>Hard to scan visually</li>
+                <li>No clear tier indicator</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option B: Visual depth indicator -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION B</div>
+          <div class="option-title">Visual Depth Indicator</div>
+          <p class="option-description">Same card structure with tier badge and left border color. Color coding makes tier visible at a glance.</p>
+        </div>
+        <div class="mockup">
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px;">Quick (Orange)</div>
+          <div class="card card-border-quick">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge tier-quick">QUICK</div>
+            </div>
+            <div class="card-body">
+              <strong>Users abandon after first post</strong>
+              <ul class="quick-bullets" style="margin-top: 8px;">
+                <li>45% post once then stop</li>
+                <li>Missing feedback signals</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; margin-top: 16px;">Balanced (Blue)</div>
+          <div class="card card-border-balanced">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge tier-balanced">BALANCED</div>
+            </div>
+            <div class="card-body">
+              <div class="balanced-section">
+                <div class="balanced-section-title">Finding</div>
+                Users abandon after first post
+              </div>
+              <div class="balanced-section">
+                <div class="balanced-section-title">Evidence</div>
+                45% post once, survey feedback mentions lack of replies
+              </div>
+            </div>
+          </div>
+
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; margin-top: 16px;">In-Depth (Purple)</div>
+          <div class="card card-border-indepth">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge tier-indepth">IN-DEPTH</div>
+            </div>
+            <div class="card-body" style="padding-top: 8px;">
+              <div class="balanced-section">
+                <div class="balanced-section-title">Finding</div>
+                Users abandon after first post
+              </div>
+              <div class="balanced-section">
+                <div class="balanced-section-title">Evidence + Competing Interpretation</div>
+                45% post once, but could be threading confusion...
+              </div>
+            </div>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Clear tier at a glance (color)</li>
+                <li>Scannable timeline mix</li>
+                <li>Consistent card structure</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Colors add cognitive load</li>
+                <li>Doesn't help with content depth</li>
+                <li>May feel decorative</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option C: Collapsible sections -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION C</div>
+          <div class="option-title">Collapsible Sections</div>
+          <p class="option-description">In-Depth shows detailed sections collapsed by default. Users expand only what interests them. Quick/Balanced are fully expanded.</p>
+        </div>
+        <div class="mockup">
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px;">In-Depth (Collapsed)</div>
+          <div class="card">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge">HIGH</div>
+            </div>
+            <div class="card-body">
+              <strong style="display: block; margin-bottom: 12px;">Users abandon after first post</strong>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Evidence (2 items)
+                  <span class="chevron-down"></span>
+                </div>
+              </div>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Assumptions (1)
+                  <span class="chevron-down"></span>
+                </div>
+              </div>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Competing Interpretations (1)
+                  <span class="chevron-down"></span>
+                </div>
+              </div>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Next Steps
+                  <span class="chevron-down"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; margin-top: 16px;">In-Depth (One Section Expanded)</div>
+          <div class="card">
+            <div class="card-header">
+              <div class="agent-icon">RI</div>
+              <div class="card-title">Research & Insights</div>
+              <div class="card-badge">HIGH</div>
+            </div>
+            <div class="card-body">
+              <strong style="display: block; margin-bottom: 12px;">Users abandon after first post</strong>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Evidence (2 items)
+                  <span class="chevron-down" style="transform: rotate(180deg);"></span>
+                </div>
+                <div class="collapsible-content">
+                  • 45% of new users post once then stop (Snowflake)<br>
+                  • Survey: "I don't know if anyone cares"
+                </div>
+              </div>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Assumptions (1)
+                  <span class="chevron-down"></span>
+                </div>
+              </div>
+
+              <div class="collapsible">
+                <div class="collapsible-title">
+                  Competing Interpretations (1)
+                  <span class="chevron-down"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Progressive disclosure</li>
+                <li>Uncluttered at first glance</li>
+                <li>Users control what they see</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Extra clicks to explore</li>
+                <li>Easy to miss sections</li>
+                <li>More complex component</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option D: Separate card styles -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION D</div>
+          <div class="option-title">Distinct Card Styles</div>
+          <p class="option-description">Each tier gets a visually distinct card design. Quick = minimal/light. In-Depth = detailed with sidebar for metadata.</p>
+        </div>
+        <div class="mockup">
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px;">Quick (Minimal)</div>
+          <div class="distinct-quick">
+            <div style="font-weight: 600; margin-bottom: 8px;">⚡ Users abandon after first post</div>
+            <div style="font-size: 12px; line-height: 1.5;">
+              • 45% post once<br>
+              • Missing feedback signals
+            </div>
+          </div>
+
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; margin-top: 16px;">Balanced (Standard)</div>
+          <div class="distinct-balanced">
+            <div class="card-header" style="padding: 8px 12px; border: none;">
+              <div class="agent-icon" style="width: 24px; height: 24px; font-size: 10px;">RI</div>
+              <div style="flex: 1;">
+                <div class="card-title" style="margin: 0;">Research & Insights</div>
+                <div style="font-size: 11px; color: #666;">Confidence: High</div>
+              </div>
+            </div>
+            <div style="padding: 12px; border-top: 1px solid #e0e0e0;">
+              <div class="balanced-section">
+                <div class="balanced-section-title">Finding</div>
+                Users abandon after first post
+              </div>
+              <div class="balanced-section">
+                <div class="balanced-section-title">Evidence</div>
+                45% post once, survey feedback on lack of replies
+              </div>
+            </div>
+          </div>
+
+          <div class="mockup-label" style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; margin-top: 16px;">In-Depth (Detailed + Sidebar)</div>
+          <div class="distinct-indepth">
+            <div class="indepth-main">
+              <strong>🔬 Users abandon after first post</strong>
+              <div style="font-size: 12px; margin-top: 8px;">
+                45% of new users post once then stop. Survey data shows "I don't know if anyone cares" (8/12). Could also indicate threading confusion vs. engagement loss.
+              </div>
+            </div>
+            <div class="indepth-sidebar">
+              <div style="font-weight: 600; margin-bottom: 6px;">Confidence</div>
+              <div style="margin-bottom: 12px;">High (multi-source)</div>
+              <div style="font-weight: 600; margin-bottom: 6px;">Sources</div>
+              <div>Snowflake, Surveys</div>
+            </div>
+            <div class="indepth-sidebar">
+              <div style="font-weight: 600; margin-bottom: 6px;">Assumptions</div>
+              <div>Users measure success by replies</div>
+            </div>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Visually distinct at a glance</li>
+                <li>Each tier feels intentional</li>
+                <li>Can show/hide details per tier</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>More CSS to maintain</li>
+                <li>Can feel fragmented</li>
+                <li>Harder to establish patterns</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

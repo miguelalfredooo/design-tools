@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2, Play, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import type { Objective, AgentMessage, CrewHealthStatus } from "@/lib/design-ops-types";
 
@@ -23,6 +25,7 @@ export function DesignOpsCrewRunner({
     new Set(objectives.map((o) => o.id))
   );
   const [running, setRunning] = useState(false);
+  const [synthesisT, setSynthesisTier] = useState<"quick" | "balanced" | "in-depth">("balanced");
   const [health, setHealth] = useState<CrewHealthStatus | null>(null);
 
   // Health check on mount
@@ -68,7 +71,7 @@ export function DesignOpsCrewRunner({
       const res = await fetch("/api/design-ops/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), objectives: selected }),
+        body: JSON.stringify({ prompt: prompt.trim(), objectives: selected, synthesis_tier: synthesisT }),
       });
 
       if (!res.ok) {
@@ -127,7 +130,7 @@ export function DesignOpsCrewRunner({
       setRunning(false);
       onRunStatusChange(false);
     }
-  }, [prompt, objectives, selectedObjectiveIds, onMessages, onRunStatusChange]);
+  }, [prompt, synthesisT, objectives, selectedObjectiveIds, onMessages, onRunStatusChange]);
 
   const crewUnavailable = health?.status === "unavailable";
   const ollamaUnavailable = health?.ollama === "unavailable";
@@ -152,6 +155,35 @@ export function DesignOpsCrewRunner({
           </p>
         </div>
       )}
+
+      {/* Synthesis Tier */}
+      <div className="mb-4 space-y-2">
+        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Synthesis Tier
+        </Label>
+        <RadioGroup value={synthesisT} onValueChange={(val) => setSynthesisTier(val as any)}>
+          <div className="flex gap-3">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="quick" id="tier-quick" />
+              <Label htmlFor="tier-quick" className="font-normal cursor-pointer">
+                ⚡ Quick
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="balanced" id="tier-balanced" />
+              <Label htmlFor="tier-balanced" className="font-normal cursor-pointer">
+                ⚙️ Balanced
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="in-depth" id="tier-indepth" />
+              <Label htmlFor="tier-indepth" className="font-normal cursor-pointer">
+                🔬 In-Depth
+              </Label>
+            </div>
+          </div>
+        </RadioGroup>
+      </div>
 
       {/* Prompt input */}
       <div>

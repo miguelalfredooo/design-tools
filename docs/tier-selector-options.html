@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tier Selector Placement Options</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+      color: #1a1a1a;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .option {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .option-header {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fafafa;
+    }
+
+    .option-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .option-label {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .option-description {
+      font-size: 14px;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .mockup {
+      padding: 20px;
+      background: white;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mock-runner {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .mock-header {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 12px;
+    }
+
+    .mock-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
+    .mock-button {
+      padding: 10px 16px;
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .tier-above {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tier-radio {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      text-align: center;
+      cursor: pointer;
+      background: white;
+    }
+
+    .tier-radio.selected {
+      background: #f0f0f0;
+      border-color: #1a1a1a;
+      font-weight: 600;
+    }
+
+    .tier-segmented {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .tier-btn {
+      padding: 6px 10px;
+      border: 1px solid #d0d0d0;
+      background: white;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .tier-btn.selected {
+      background: #1a1a1a;
+      color: white;
+      border-color: #1a1a1a;
+    }
+
+    .run-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .tier-dropdown {
+      padding: 8px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .collapsible-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .chevron {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>') no-repeat center;
+      background-size: contain;
+    }
+
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    .pros, .cons {
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .pros {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .cons {
+      background: #ffebee;
+      color: #b71c1c;
+    }
+
+    .pros h4, .cons h4 {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .pros ul, .cons ul {
+      margin-left: 16px;
+    }
+
+    .pros li, .cons li {
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tier Selector Placement Options</h1>
+    <p class="subtitle">Four approaches to integrate synthesis tier selection into Carrier's crew runner</p>
+
+    <div class="grid">
+      <!-- Option A -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION A</div>
+          <div class="option-title">Above Prompt Input</div>
+          <p class="option-description">Tier selector appears as labeled radio buttons above the prompt textarea—explicit and discoverable.</p>
+        </div>
+        <div class="mockup">
+          <div class="mock-runner">
+            <div class="mock-header">Synthesis Tier</div>
+            <div class="tier-above">
+              <div class="tier-radio">⚡ Quick</div>
+              <div class="tier-radio selected">⚙️ Balanced</div>
+              <div class="tier-radio">🔬 In-Depth</div>
+            </div>
+
+            <div class="mock-header" style="margin-top: 12px;">Focus Prompt</div>
+            <textarea class="mock-input" rows="4" placeholder="Enter your focus prompt for synthesis..."></textarea>
+
+            <button class="mock-button">Run Synthesis</button>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Clear visual hierarchy</li>
+                <li>Discoverable at first glance</li>
+                <li>Explicit choice before running</li>
+                <li>Room for tier descriptions</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Takes vertical space</li>
+                <li>May seem like separate control</li>
+                <li>Less "minimal" feel</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option B -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION B</div>
+          <div class="option-title">Segmented Control Next to Button</div>
+          <p class="option-description">Compact button group right next to the "Run" button—feels like part of the action.</p>
+        </div>
+        <div class="mockup">
+          <div class="mock-runner">
+            <div class="mock-header">Focus Prompt</div>
+            <textarea class="mock-input" rows="4" placeholder="Enter your focus prompt for synthesis..."></textarea>
+
+            <div class="run-row" style="margin-top: 12px;">
+              <button class="mock-button" style="flex: 1;">Run Synthesis</button>
+              <div class="tier-segmented">
+                <button class="tier-btn">Q</button>
+                <button class="tier-btn selected">B</button>
+                <button class="tier-btn">D</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Compact, minimal space</li>
+                <li>Feels like action modifier</li>
+                <li>Works in tight layouts</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Abbreviations (Q/B/D) unclear</li>
+                <li>Hard to discover</li>
+                <li>Needs hover tooltips</li>
+                <li>Cramped at small widths</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option C -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION C</div>
+          <div class="option-title">Dropdown in Runner Header</div>
+          <p class="option-description">Select menu in the runner's header bar, right where stage selection might live.</p>
+        </div>
+        <div class="mockup">
+          <div class="mock-runner">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="mock-header" style="margin: 0;">Focus Prompt</div>
+              <select class="tier-dropdown">
+                <option selected>Balanced (standard)</option>
+                <option>Quick (snappy)</option>
+                <option>In-Depth (thorough)</option>
+              </select>
+            </div>
+            <textarea class="mock-input" rows="4" placeholder="Enter your focus prompt for synthesis..."></textarea>
+
+            <button class="mock-button" style="margin-top: 12px;">Run Synthesis</button>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Takes minimal space</li>
+                <li>Clear, full descriptions visible</li>
+                <li>Familiar pattern (select menu)</li>
+                <li>Can show default tier</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Easy to miss (header area)</li>
+                <li>Menu closes after selection</li>
+                <li>Less visible when selected</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option D -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">OPTION D</div>
+          <div class="option-title">Collapsible Advanced Options</div>
+          <p class="option-description">Tier selector inside a collapsible "Advanced Options" section below the prompt.</p>
+        </div>
+        <div class="mockup">
+          <div class="mock-runner">
+            <div class="mock-header">Focus Prompt</div>
+            <textarea class="mock-input" rows="4" placeholder="Enter your focus prompt for synthesis..."></textarea>
+
+            <div class="collapsible-header">
+              <span>Advanced Options</span>
+              <span class="chevron"></span>
+            </div>
+
+            <div style="padding: 12px; background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 12px; display: none;">
+              <div class="mock-header">Synthesis Tier</div>
+              <div class="tier-above">
+                <div class="tier-radio">Quick</div>
+                <div class="tier-radio selected">Balanced</div>
+                <div class="tier-radio">In-Depth</div>
+              </div>
+            </div>
+
+            <button class="mock-button">Run Synthesis</button>
+          </div>
+
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✓ Pros</h4>
+              <ul>
+                <li>Clean default state</li>
+                <li>Doesn't clutter main form</li>
+                <li>Room for other options later</li>
+                <li>Power-user feature feel</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>✗ Cons</h4>
+              <ul>
+                <li>Hidden by default</li>
+                <li>Extra click to discover</li>
+                <li>May feel buried</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

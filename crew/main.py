@@ -34,6 +34,7 @@ async def run_crew(request: Request):
 
     # Extract modular inputs
     stage = body.get("stage", "discovery")
+    synthesis_tier = body.get("synthesis_tier", "balanced")  # quick, balanced, in-depth
     problem_statement = body.get("problem_statement")
     objective = body.get("objective")
     hypothesis = body.get("hypothesis")
@@ -58,6 +59,7 @@ async def run_crew(request: Request):
                 "run_id": run_id,
                 "started_at": datetime.now().isoformat(),
                 "stage": stage,
+                "synthesis_tier": synthesis_tier,
                 "problem": problem_statement,
             }),
         }
@@ -70,6 +72,7 @@ async def run_crew(request: Request):
                 None,
                 _run_crew,
                 stage,
+                synthesis_tier,
                 problem_statement,
                 objective,
                 hypothesis,

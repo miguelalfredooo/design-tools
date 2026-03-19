@@ -5,11 +5,13 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
     """
     Research & Insights synthesizes all available evidence.
     Flexible based on what data and context is provided.
+    Tier affects output depth: quick (snappy), balanced (standard), in-depth (thorough).
     """
     problem = context.get("problem_statement", "")
     hypothesis = context.get("hypothesis", "")
     metric = context.get("metric", "")
     stage = context.get("stage", "discovery")
+    synthesis_tier = context.get("synthesis_tier", "balanced")
     research_data = context.get("research_data", {})
 
     # Build prompt based on available context
@@ -42,6 +44,20 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
     else:
         parts.append(f"\nNOTE: Limited data available. Proceed with directional insights + stated assumptions.")
 
+    # Synthesis tier guidance
+    if synthesis_tier == "quick":
+        parts.extend([
+            "\nSYNTHESIS TIER: QUICK",
+            "Be snappy and directional. Surface 2-3 key patterns only.",
+            "Skip nuance and competing interpretations. Just the headline findings.",
+        ])
+    elif synthesis_tier == "in-depth":
+        parts.extend([
+            "\nSYNTHESIS TIER: IN-DEPTH",
+            "Go deep. Explore competing interpretations, contradictions, and underlying tensions.",
+            "Show your reasoning. Why might the data point to multiple conclusions?",
+        ])
+
     parts.extend([
         "\nYour job:",
         "1. Synthesize all available evidence using your two-pass method:",
@@ -58,9 +74,32 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
         "- Never fabricate evidence. If data is thin, say so.",
     ])
 
-    return Task(
-        description="\n".join(parts),
-        expected_output=(
+    # Tier-specific expected output
+    if synthesis_tier == "quick":
+        expected_output = (
+            "QUICK SYNTHESIS (snappy, directional):\n"
+            "- HEADLINE: one sentence summarizing the top finding\n"
+            "- KEY PATTERNS: 2-3 bullet points (no deep explanation)\n"
+            "- CONFIDENCE: High / Medium / Low\n"
+            "- NEXT STEP: one actionable step to validate or act"
+        )
+    elif synthesis_tier == "in-depth":
+        expected_output = (
+            "IN-DEPTH SYNTHESIS (thorough, reasoned):\n"
+            "- SUBJECT: one-line finding or pattern\n"
+            "- CONFIDENCE: High / Medium / Low (with detailed explanation)\n"
+            "- ASSUMPTIONS: what's taken as given + why\n"
+            "- FINDINGS: 2-5 patterns, each with:\n"
+            "    - Description\n"
+            "    - Evidence (data sources)\n"
+            "    - Confidence\n"
+            "    - Why this interpretation? (competing possibilities)\n"
+            "- COMPETING INTERPRETATIONS: if data supports multiple conclusions, name them\n"
+            "- NEXT STEPS: how to validate or act on this\n"
+            "- MISSING CONTEXT: what data would strengthen or challenge this"
+        )
+    else:  # balanced (default)
+        expected_output = (
             "STRUCTURED SYNTHESIS that includes:\n"
             "- SUBJECT: one-line finding or pattern\n"
             "- CONFIDENCE: High / Medium / Low (with explanation)\n"
@@ -71,6 +110,10 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
             "    - Confidence\n"
             "- NEXT STEPS: how to validate or act on this\n"
             "- MISSING CONTEXT: what data would make this stronger"
-        ),
+        )
+
+    return Task(
+        description="\n".join(parts),
+        expected_output=expected_output,
         agent=agent,
     )

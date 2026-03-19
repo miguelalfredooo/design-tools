@@ -16,6 +16,7 @@ def get_llm() -> LLM:
 
 def run_crew(
     stage: str = "discovery",
+    synthesis_tier: str = "balanced",
     problem_statement: Optional[str] = None,
     objective: Optional[str] = None,
     hypothesis: Optional[str] = None,
@@ -29,6 +30,7 @@ def run_crew(
 
     Args:
         stage: 'discovery', 'validation', 'solution', or 'optimization'
+        synthesis_tier: 'quick', 'balanced' (default), or 'in-depth'
         problem_statement: The problem we're solving
         objective: The business objective
         hypothesis: What we're testing
@@ -47,6 +49,7 @@ def run_crew(
     # Build context from inputs
     context = {
         "stage": stage,
+        "synthesis_tier": synthesis_tier,
         "problem_statement": problem_statement,
         "objective": objective,
         "hypothesis": hypothesis,

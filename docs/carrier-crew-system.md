@@ -119,6 +119,7 @@ The crew accepts flexible, optional inputs. Different combinations enable differ
 ```json
 {
   "stage": "discovery|validation|solution|optimization",
+  "synthesis_tier": "quick|balanced|in-depth",
 
   "problem_statement": "Users struggle with...",
   "objective": "Improve X to Y",
@@ -155,6 +156,18 @@ The crew accepts flexible, optional inputs. Different combinations enable differ
 
 **No field is required.** The crew gracefully handles missing data and always produces actionable output.
 
+### Synthesis Tier
+
+The `synthesis_tier` parameter controls output depth without changing the underlying analysis:
+
+| Tier | Output Style | Use Case | Speed |
+|------|--------------|----------|-------|
+| **quick** | Snappy, 2-3 patterns, bullets | Fast feedback loops, gut-checking | Fastest |
+| **balanced** (default) | Structured synthesis, findings + next steps | Standard analysis, most runs | Standard |
+| **in-depth** | Thorough, competing interpretations, detailed reasoning | Foundational decisions, contradictions | Slightly slower |
+
+**Key principle:** All tiers analyze the same data. Tier only affects _narrative structure_ and _depth of reasoning_, not data completeness.
+
 ---
 
 ## Lifecycle Stages
@@ -188,24 +201,28 @@ The crew accepts flexible, optional inputs. Different combinations enable differ
 ## Execution Flow
 
 ```
-POST /run { stage, problem_statement, metric, research_data, ... }
+POST /run { stage, synthesis_tier, problem_statement, metric, research_data, ... }
     │
-    ├── SSE: run_start
+    ├── SSE: run_start (includes synthesis_tier)
     ├── SSE: agent_start (pm)
     │
     ├── Crew.kickoff() (sequential)
     │   │
     │   ├── PM TASK
     │   │   ├─ Input: problem_statement, objective, metric, constraints
-    │   │   └─ Output: framed objective + success criteria
+    │   │   └─ Output: framed objective + success criteria (tier-agnostic)
     │   │
-    │   ├── RESEARCH & INSIGHTS TASK
-    │   │   ├─ Input: PM frame + research_data (SQL, surveys, votes, prototypes)
-    │   │   └─ Output: structured synthesis with confidence labels
+    │   ├── RESEARCH & INSIGHTS TASK (TIER-AWARE)
+    │   │   ├─ Input: PM frame + research_data + synthesis_tier
+    │   │   ├─ Quick: 2-3 key patterns (bullets, minimal reasoning)
+    │   │   ├─ Balanced: structured synthesis (findings + confidence + next steps)
+    │   │   └─ In-depth: all patterns + competing interpretations + detailed assumptions
     │   │
-    │   └─ [if stage != discovery] DESIGN TASK
-    │       ├─ Input: research synthesis + constraints
-    │       └─ Output: design recommendation + trade-offs
+    │   └─ [if stage != discovery] DESIGN TASK (TIER-AWARE)
+    │       ├─ Input: research synthesis + constraints + synthesis_tier
+    │       ├─ Quick: direction + 2 key trade-offs only
+    │       ├─ Balanced: direction + interactions + trade-offs + feasibility
+    │       └─ In-depth: full recommendation + alternatives considered + risks + mitigations
     │
     ├── SSE: agent_message (each agent's output)
     │
@@ -213,6 +230,8 @@ POST /run { stage, problem_statement, metric, research_data, ... }
 ```
 
 **Sequential process:** PM → Research → Design (no parallel execution, no delegation)
+
+**Tier adaptation:** Research & Insights and Design adapt their output structure based on `synthesis_tier`. The PM always frames strategically—tiers don't affect business-level framing.
 
 ---
 
@@ -353,12 +372,22 @@ The UI component `design-ops-crew-runner` handles:
 
 ---
 
+## Recent Changes
+
+**Synthesis Tiers (v1.1):**
+- Added `synthesis_tier` parameter: quick, balanced (default), in-depth
+- Research & Insights and Design adapt output depth based on tier
+- Same data analysis, different narrative structure per tier
+- Keeps output snappy by default while supporting deeper dives when needed
+
 ## Future Evolution
 
 1. **Tool expansion** — add tools for competitor analysis, past synthesis retrieval, external APIs
 2. **Streaming synthesis** — output findings as they're discovered, not all at once
-3. **Recursive synthesis** — agents iterate on findings if confidence is low
-4. **Cost optimization** — use faster models for framing, reserve Haiku for complex synthesis
-5. **Citation tracking** — agents explicitly cite which book/framework informed each recommendation
+3. **Auto-escalation to in-depth** — detect contradictions or low confidence and suggest deeper synthesis
+4. **Tier UI selector** — let users pick tier at session creation or suggest based on complexity
+5. **Recursive synthesis** — agents iterate on findings if confidence is low
+6. **Cost optimization** — use faster models for framing, reserve Haiku for complex synthesis
+7. **Citation tracking** — agents explicitly cite which book/framework informed each recommendation
 
 For now: three-agent sequential model keeps the system understandable, fast, and maintainable.

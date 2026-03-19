@@ -5,6 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AgentMessage } from "@/lib/design-ops-types";
+import {
+  SynthesisCardQuick,
+  SynthesisCardBalanced,
+  SynthesisCardInDepth,
+  type SynthesisCardQuickProps,
+  type SynthesisCardBalancedProps,
+  type SynthesisCardInDepthProps,
+} from "@/components/design/synthesis-cards";
 
 interface DesignOpsTimelineProps {
   messages: AgentMessage[];
@@ -42,70 +50,48 @@ export function DesignOpsTimeline({ messages }: DesignOpsTimelineProps) {
 
         return (
           <div key={i} className="relative">
-            {/* Timeline connector */}
-            {!isLast && (
-              <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />
+            {!isLast && <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />}
+
+            {/* Route to correct card component based on tier */}
+            {msg.tier === "quick" ? (
+              <SynthesisCardQuick
+                from={msg.from as any}
+                fromName={msg.fromName || ""}
+                subject={msg.subject}
+                confidence={msg.confidence as any}
+                timestamp={msg.timestamp}
+                tier="quick"
+                headline={msg.subject}
+                keyPoints={(msg.body || "").split("\n").filter(l => l.trim()).slice(0, 3)}
+                isLast={isLast}
+              />
+            ) : msg.tier === "in-depth" ? (
+              <SynthesisCardInDepth
+                from={msg.from as any}
+                fromName={msg.fromName || ""}
+                subject={msg.subject}
+                confidence={msg.confidence as any}
+                timestamp={msg.timestamp}
+                tier="in-depth"
+                finding={msg.subject}
+                evidence={[]}
+                nextSteps={msg.body || ""}
+                isLast={isLast}
+              />
+            ) : (
+              <SynthesisCardBalanced
+                from={msg.from as any}
+                fromName={msg.fromName || ""}
+                subject={msg.subject}
+                confidence={msg.confidence as any}
+                timestamp={msg.timestamp}
+                tier="balanced"
+                finding={msg.subject}
+                evidence={[]}
+                nextSteps={msg.body || ""}
+                isLast={isLast}
+              />
             )}
-
-            <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <CardHeader className="py-3 px-4">
-                <div className="flex items-start gap-3">
-                  {/* Agent avatar */}
-                  <div className={cn("size-10 rounded-lg bg-muted flex items-center justify-center shrink-0", agent.color)}>
-                    <Icon className="size-5" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    {/* Agent name + badges */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={cn("text-xs font-bold uppercase tracking-wider", agent.color)}>
-                        {msg.fromName || agent.label}
-                      </span>
-                      <span className="text-xs text-muted-foreground">→ {msg.to === "user" ? "You" : AGENT_CONFIG[msg.to]?.label || msg.to}</span>
-                      {msg.confidence !== "n/a" && (
-                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", CONFIDENCE_STYLES[msg.confidence])}>
-                          {msg.confidence}
-                        </Badge>
-                      )}
-                      {msg.priority === "critical" && (
-                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                          critical
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Subject */}
-                    <CardTitle className="text-sm font-medium mt-1">{msg.subject}</CardTitle>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="px-4 pb-4 pt-0 ml-[52px]">
-                {/* Body */}
-                <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                  {msg.body}
-                </div>
-
-                {/* Assumptions */}
-                {msg.assumptions && (
-                  <details className="mt-3">
-                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                      Assumptions
-                    </summary>
-                    <p className="text-xs text-muted-foreground mt-1 pl-3 border-l-2 border-border">
-                      {msg.assumptions}
-                    </p>
-                  </details>
-                )}
-
-                {/* Next step */}
-                {msg.nextStep && (
-                  <p className="text-xs text-muted-foreground mt-3 italic">
-                    Next: {msg.nextStep}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
           </div>
         );
       })}
