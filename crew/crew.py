@@ -7,11 +7,9 @@ from tools import fetch_evidence
 
 def get_llm() -> LLM:
     import os
-    model = os.environ.get("OLLAMA_MODEL", "qwen3.5")
-    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
     return LLM(
-        model=f"ollama/{model}",
-        base_url=base_url,
+        model="claude-haiku-4-5-20251001",
+        api_key=os.environ.get("ANTHROPIC_API_KEY"),
     )
 
 

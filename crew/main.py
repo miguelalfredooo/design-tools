@@ -16,30 +16,14 @@ app = FastAPI(title="Design Ops Crew API")
 
 @app.get("/health")
 async def health():
-    """Check service health and Ollama connectivity."""
-    ollama_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-    ollama_status = "unknown"
-
-    try:
-        import httpx
-        async with httpx.AsyncClient(timeout=5) as client:
-            resp = await client.get(f"{ollama_url}/api/tags")
-            if resp.status_code == 200:
-                models = resp.json().get("models", [])
-                model_names = [m.get("name", "") for m in models]
-                ollama_status = "ok"
-            else:
-                ollama_status = "error"
-                model_names = []
-    except Exception:
-        ollama_status = "unavailable"
-        model_names = []
+    """Check service health and Claude API connectivity."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    anthropic_status = "ok" if api_key else "unconfigured"
 
     return {
         "status": "ok",
-        "ollama": ollama_status,
-        "models": model_names,
-        "configured_model": os.environ.get("OLLAMA_MODEL", "qwen3.5"),
+        "anthropic": anthropic_status,
+        "model": "claude-haiku-4-5-20251001",
     }
 
 
