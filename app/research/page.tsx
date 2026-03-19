@@ -9,7 +9,7 @@ async function getLatestBatch() {
   const { data: latest } = await supabase
     .from("research_insights")
     .select("batch_id, created_at")
-    .is("session_id", null)
+    .filter("session_id", "is", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
