@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
+import { verifySessionToken } from "@/app/lib/session";
+import { validateCommentInput } from "@/app/lib/input-validation";
+
+function extractSessionToken(request: Request): string | null {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith("sessionToken=")) {
+      return trimmed.substring("sessionToken=".length);
+    }
+  }
+  return null;
+}
 
 export async function GET(
   request: Request,
@@ -37,6 +51,13 @@ export async function POST(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
+  const validation = validateCommentInput(body);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: "Validation failed", details: validation.errors },
+      { status: 400 }
+    );
+  }
   const { optionId, voterId, voterName, body: commentBody, xPct, yPct } = body;
 
   if (!optionId || !voterId || !voterName?.trim()) {
@@ -136,6 +157,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Missing commentId" }, { status: 400 });
   }
 
+  // Check sessionToken first (preferred method)
+  const sessionToken = extractSessionToken(request);
+  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+
   const db = getSupabaseAdmin();
 
   // Fetch comment to verify it belongs to this session
@@ -150,7 +175,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
 
-  // Auth: commenter (matching voterId) OR creator/admin
+  // Auth: commenter (matching voterId) OR creator/admin OR sessionToken valid
   const isOwner = voterId && comment.voter_id === voterId;
 
   let isCreator = false;
@@ -169,7 +194,7 @@ export async function DELETE(
     isAdmin = !!expectedPassword && adminPassword === expectedPassword;
   }
 
-  if (!isOwner && !isCreator && !isAdmin) {
+  if (!isOwner && !isCreator && !isAdmin && !sessionValid) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

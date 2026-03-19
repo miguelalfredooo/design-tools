@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploration A — Signal Tags (Light)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fafafa;
+      color: #18181b;
+      padding: 48px;
+      min-height: 100vh;
+    }
+
+    .meta {
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #e4e4e7;
+    }
+
+    .meta h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      margin-bottom: 8px;
+    }
+
+    .meta p {
+      font-size: 13px;
+      color: #a1a1aa;
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 640px;
+    }
+
+    .card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 20px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .card:first-child { border-radius: 12px 12px 0 0; }
+    .card:last-child { border-radius: 0 0 12px 12px; }
+
+    .card:hover {
+      background: #f4f4f5;
+    }
+
+    .tag {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-top: 2px;
+    }
+
+    .tag-risk {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .tag-opportunity {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+
+    .tag-pattern {
+      background: #ecfeff;
+      color: #0891b2;
+    }
+
+    .card-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
+      color: #27272a;
+    }
+
+    .card-source {
+      font-size: 12px;
+      color: #a1a1aa;
+      margin-top: 6px;
+    }
+
+    .card-expand {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d4d4d8;
+      margin-top: 2px;
+      transition: color 0.15s ease;
+    }
+
+    .card:hover .card-expand { color: #a1a1aa; }
+
+    .card.expanded .card-detail { display: block; }
+    .card.expanded .card-expand svg { transform: rotate(180deg); }
+
+    .card-detail {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f4f4f5;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #71717a;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 32px;
+      max-width: 640px;
+      background: #f4f4f5;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .view-toggle button {
+      flex: 1;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      border: none;
+      background: transparent;
+      color: #a1a1aa;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .view-toggle button.active {
+      background: #ffffff;
+      color: #18181b;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    /* Shared view */
+    body.shared-view .card-detail,
+    body.shared-view .card-source {
+      opacity: 0;
+      max-height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body.shared-view .card.expanded .card-detail {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="meta">
+    <h1>Exploration A — Signal Tags (Light)</h1>
+    <p>
+      Same structure as the dark version — compact pill tags with semantic color.
+      Light mode uses tinted backgrounds (rose-50, green-50, cyan-50) on white cards.
+      Tags stay vivid against neutral surroundings.
+    </p>
+  </div>
+
+  <div class="view-toggle">
+    <button class="active" onclick="setView('private')">Private</button>
+    <button onclick="setView('shared')">Shared</button>
+  </div>
+
+  <div class="card-list">
+    <div class="card" onclick="toggleCard(this)">
+      <span class="tag tag-risk">Risk</span>
+      <div class="card-content">
+        <div class="card-text">Users abandon the session setup flow when the objective field has no guidance or examples</div>
+        <div class="card-source">3 of 5 participants — Session #12, #14, #15</div>
+        <div class="card-detail">
+          Participants paused for 8–15 seconds on the objective field before either typing something generic or navigating away. Two participants explicitly said they didn't know what was expected. The empty state provides no scaffolding — no placeholder, no examples, no constraints on format.
+        </div>
+      </div>
+      <div class="card-expand"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <span class="tag tag-opportunity">Opportunity</span>
+      <div class="card-content">
+        <div class="card-text">Confidence level in the summary strip could link directly to the supporting evidence</div>
+        <div class="card-source">Synthesis — cross-session pattern</div>
+        <div class="card-detail">
+          PMs consistently asked "why this confidence level?" after reading the summary. A direct link from the confidence indicator to the underlying data points would eliminate a follow-up question that currently requires the designer to explain verbally.
+        </div>
+      </div>
+      <div class="card-expand"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <span class="tag tag-pattern">Pattern</span>
+      <div class="card-content">
+        <div class="card-text">Participants consistently look for a "done" or "complete" action after reviewing results</div>
+        <div class="card-source">4 of 5 participants — Sessions #11–#15</div>
+        <div class="card-detail">
+          After reviewing the results view, participants looked for a way to mark the session as complete or archive it. The current flow has no explicit completion action — sessions just become inactive. This creates ambiguity about whether a session is "done" or "paused."
+        </div>
+      </div>
+      <div class="card-expand"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <span class="tag tag-risk">Risk</span>
+      <div class="card-content">
+        <div class="card-text">The shared view exposes internal run IDs in the URL, confusing stakeholders</div>
+        <div class="card-source">PM feedback — 2 incidents</div>
+        <div class="card-detail">
+          Two PMs separately asked what the alphanumeric string in the shared URL meant, assuming it was a version number or error code. Internal identifiers leaking into shared surfaces undermine the "readable labels" principle.
+        </div>
+      </div>
+      <div class="card-expand"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <span class="tag tag-opportunity">Opportunity</span>
+      <div class="card-content">
+        <div class="card-text">Design Ops module completion dates could auto-populate the "next steps" field</div>
+        <div class="card-source">Synthesis — designer workflow observation</div>
+        <div class="card-detail">
+          Designers manually copy completion dates into next steps text. This is error-prone and creates drift between the module status and the summary. Auto-populating would keep them in sync and reduce a repeated manual task.
+        </div>
+      </div>
+      <div class="card-expand"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+  </div>
+
+  <script>
+    function toggleCard(card) {
+      card.classList.toggle('expanded');
+    }
+
+    function setView(mode) {
+      document.body.classList.toggle('shared-view', mode === 'shared');
+      document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === mode);
+      });
+      if (mode === 'shared') {
+        document.querySelectorAll('.card.expanded').forEach(c => c.classList.remove('expanded'));
+      }
+    }
+  </script>
+</body>
+</html>

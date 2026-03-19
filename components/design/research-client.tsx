@@ -388,37 +388,39 @@ function OverviewTab({ batch }: Props) {
                     <CardDescription>Frequency across sessions</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer config={themeChartConfig} className="h-[300px] w-full">
-                      <BarChart
-                        accessibilityLayer
-                        data={themeChartData}
-                        layout="vertical"
-                        margin={{ left: 8, right: 16, top: 8, bottom: 8 }}
-                      >
-                        <CartesianGrid horizontal={false} />
-                        <YAxis
-                          dataKey="name"
-                          type="category"
-                          tickLine={false}
-                          axisLine={false}
-                          hide
-                        />
-                        <XAxis type="number" tickLine={false} axisLine={false} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="mentions" radius={4} barSize={20}>
-                          {themeChartData.map((entry, i) => (
-                            <Cell key={entry.name} fill={chartColors[i % chartColors.length]} />
-                          ))}
-                          <LabelList
+                    <div style={{ display: "block", width: "100%", height: 300, overflow: "hidden" }}>
+                      <ChartContainer config={themeChartConfig} className="h-[300px] w-full">
+                        <BarChart
+                          accessibilityLayer
+                          data={themeChartData}
+                          layout="vertical"
+                          margin={{ left: 8, right: 16, top: 8, bottom: 8 }}
+                        >
+                          <CartesianGrid horizontal={false} />
+                          <YAxis
                             dataKey="name"
-                            position="insideBottomLeft"
-                            offset={-16}
-                            fontSize={11}
-                            fill="var(--color-muted-foreground, #888)"
+                            type="category"
+                            tickLine={false}
+                            axisLine={false}
+                            hide
                           />
-                        </Bar>
-                      </BarChart>
-                    </ChartContainer>
+                          <XAxis type="number" tickLine={false} axisLine={false} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="mentions" radius={4} barSize={20}>
+                            {themeChartData.map((entry, i) => (
+                              <Cell key={entry.name} fill={chartColors[i % chartColors.length]} />
+                            ))}
+                            <LabelList
+                              dataKey="name"
+                              position="insideBottomLeft"
+                              offset={-16}
+                              fontSize={11}
+                              fill="var(--color-muted-foreground, #888)"
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -540,25 +542,27 @@ function OverviewTab({ batch }: Props) {
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-8">
-                        <ChartContainer config={alignmentConfig} className="h-[160px] w-[160px] shrink-0">
-                          <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Pie
-                              data={alignmentData}
-                              dataKey="value"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={40}
-                              outerRadius={70}
-                              strokeWidth={2}
-                            >
-                              {alignmentData.map((entry) => (
-                                <Cell key={entry.name} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                          </PieChart>
-                        </ChartContainer>
+                        <div style={{ display: "block", width: 160, height: 160, overflow: "hidden", flexShrink: 0 }}>
+                          <ChartContainer config={alignmentConfig} className="h-[160px] w-[160px] shrink-0">
+                            <PieChart>
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                              <Pie
+                                data={alignmentData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={40}
+                                outerRadius={70}
+                                strokeWidth={2}
+                              >
+                                {alignmentData.map((entry) => (
+                                  <Cell key={entry.name} fill={entry.fill} />
+                                ))}
+                              </Pie>
+                            </PieChart>
+                          </ChartContainer>
+                        </div>
                         <div className="space-y-2">
                           {alignmentData.map((d) => (
                             <div key={d.name} className="flex items-center gap-2">
@@ -1476,29 +1480,31 @@ function ReplaysTab() {
                       Top Friction Patterns
                     </p>
                   </div>
-                  <ChartContainer config={frictionChartConfig} className="h-[140px] w-full">
-                    <BarChart
-                      data={synth.frictions.slice(0, 5)}
-                      layout="vertical"
-                      margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
-                    >
-                      <XAxis type="number" hide />
-                      <YAxis
-                        type="category"
-                        dataKey="pattern"
-                        width={100}
-                        tick={{ fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="frequency" radius={[0, 4, 4, 0]}>
-                        {synth.frictions.slice(0, 5).map((f, i) => (
-                          <Cell key={i} fill={severityColor[f.severity] || "var(--chart-5)"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ChartContainer>
+                  <div style={{ display: "block", width: "100%", height: 140, overflow: "hidden" }}>
+                    <ChartContainer config={frictionChartConfig} className="h-[140px] w-full">
+                      <BarChart
+                        data={synth.frictions.slice(0, 5)}
+                        layout="vertical"
+                        margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
+                      >
+                        <XAxis type="number" hide />
+                        <YAxis
+                          type="category"
+                          dataKey="pattern"
+                          width={100}
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="frequency" radius={[0, 4, 4, 0]}>
+                          {synth.frictions.slice(0, 5).map((f, i) => (
+                            <Cell key={i} fill={severityColor[f.severity] || "var(--chart-5)"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}

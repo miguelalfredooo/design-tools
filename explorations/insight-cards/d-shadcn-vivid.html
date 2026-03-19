@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploration D — shadcn + Vivid Accents</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* shadcn zinc dark */
+      --background: #09090b;
+      --card: #0a0a0c;
+      --card-hover: #111113;
+      --border: #27272a;
+      --border-subtle: #1c1c1f;
+      --foreground: #fafafa;
+      --muted: #a1a1aa;
+      --muted-foreground: #71717a;
+      --popover: #18181b;
+
+      /* vivid accent system */
+      --risk: #ef4444;
+      --risk-muted: #7f1d1d;
+      --opportunity: #22c55e;
+      --opportunity-muted: #14532d;
+      --pattern: #06b6d4;
+      --pattern-muted: #164e63;
+    }
+
+    body {
+      font-family: 'Geist', -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      padding: 48px;
+      min-height: 100vh;
+    }
+
+    .meta {
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .meta h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      margin-bottom: 8px;
+    }
+
+    .meta p {
+      font-size: 13px;
+      color: var(--muted-foreground);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    /* View toggle — shadcn segmented control */
+    .view-toggle {
+      display: inline-flex;
+      margin-bottom: 24px;
+      background: var(--popover);
+      border-radius: 8px;
+      padding: 3px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .view-toggle button {
+      padding: 6px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      border: none;
+      background: transparent;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .view-toggle button.active {
+      background: var(--border);
+      color: var(--foreground);
+    }
+
+    /* Card list */
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 640px;
+    }
+
+    .card {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: background 0.12s ease;
+      background: var(--card);
+    }
+
+    .card:hover {
+      background: var(--card-hover);
+    }
+
+    /* Left border accent */
+    .card-accent {
+      width: 3px;
+      flex-shrink: 0;
+    }
+
+    .accent-risk { background: var(--risk); }
+    .accent-opportunity { background: var(--opportunity); }
+    .accent-pattern { background: var(--pattern); }
+
+    .card-body {
+      flex: 1;
+      padding: 18px 20px;
+      min-width: 0;
+    }
+
+    /* Header row: type + source */
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .card-type {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .type-risk { color: var(--risk); }
+    .type-opportunity { color: var(--opportunity); }
+    .type-pattern { color: var(--pattern); }
+
+    .card-dot {
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: var(--muted-foreground);
+      flex-shrink: 0;
+    }
+
+    .card-source {
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+
+    /* Insight text */
+    .card-text {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    /* Expand chevron */
+    .card-chevron {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 16px 0 10px;
+      color: var(--border);
+      transition: color 0.12s ease;
+    }
+
+    .card:hover .card-chevron { color: var(--muted-foreground); }
+
+    .card-chevron svg {
+      transition: transform 0.15s ease;
+    }
+
+    .card.expanded .card-chevron svg {
+      transform: rotate(180deg);
+    }
+
+    /* Detail panel */
+    .card-detail {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--muted-foreground);
+    }
+
+    .card.expanded .card-detail { display: block; }
+
+    /* Shared view — strip private elements */
+    body.shared-view .card-source,
+    body.shared-view .card-dot {
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    body.shared-view .card-detail {
+      display: none !important;
+    }
+
+    body.shared-view .card-chevron {
+      display: none;
+    }
+
+    body.shared-view .card-list {
+      gap: 10px;
+    }
+
+    body.shared-view .card {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+    }
+
+    body.shared-view .card:hover {
+      border-color: var(--border);
+      background: var(--card);
+    }
+
+    /* Count bar */
+    .count-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      max-width: 640px;
+    }
+
+    .count-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+
+    .count-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .count-dot-risk { background: var(--risk); }
+    .count-dot-opportunity { background: var(--opportunity); }
+    .count-dot-pattern { background: var(--pattern); }
+
+    .count-num {
+      font-weight: 600;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="meta">
+    <h1>Exploration D — shadcn + Vivid Accents</h1>
+    <p>
+      shadcn/ui zinc dark foundation. Three vivid accent colors — red, green, cyan —
+      used only on the left border and type label. Everything else is neutral.
+      High contrast where it matters, quiet everywhere else. Comfortable spacing
+      with room to breathe. Geist font.
+    </p>
+  </div>
+
+  <div class="view-toggle">
+    <button class="active" onclick="setView('private')">Private</button>
+    <button onclick="setView('shared')">Shared</button>
+  </div>
+
+  <div class="count-bar">
+    <div class="count-item">
+      <span class="count-dot count-dot-risk"></span>
+      <span class="count-num">2</span> Risks
+    </div>
+    <div class="count-item">
+      <span class="count-dot count-dot-opportunity"></span>
+      <span class="count-num">2</span> Opportunities
+    </div>
+    <div class="count-item">
+      <span class="count-dot count-dot-pattern"></span>
+      <span class="count-num">1</span> Pattern
+    </div>
+  </div>
+
+  <div class="card-list">
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-accent accent-risk"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-risk">Risk</span>
+          <span class="card-dot"></span>
+          <span class="card-source">3 of 5 participants</span>
+        </div>
+        <div class="card-text">Users abandon the session setup flow when the objective field has no guidance or examples</div>
+        <div class="card-detail">
+          Participants paused for 8–15 seconds on the objective field before either typing something generic or navigating away. Two participants explicitly said they didn't know what was expected. The empty state provides no scaffolding — no placeholder, no examples, no constraints on format.
+        </div>
+      </div>
+      <div class="card-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-accent accent-opportunity"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-opportunity">Opportunity</span>
+          <span class="card-dot"></span>
+          <span class="card-source">Cross-session synthesis</span>
+        </div>
+        <div class="card-text">Confidence level in the summary strip could link directly to the supporting evidence</div>
+        <div class="card-detail">
+          PMs consistently asked "why this confidence level?" after reading the summary. A direct link from the confidence indicator to the underlying data points would eliminate a follow-up question that currently requires the designer to explain verbally.
+        </div>
+      </div>
+      <div class="card-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-accent accent-pattern"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-pattern">Pattern</span>
+          <span class="card-dot"></span>
+          <span class="card-source">4 of 5 participants</span>
+        </div>
+        <div class="card-text">Participants consistently look for a "done" or "complete" action after reviewing results</div>
+        <div class="card-detail">
+          After reviewing the results view, participants looked for a way to mark the session as complete or archive it. The current flow has no explicit completion action — sessions just become inactive. This creates ambiguity about whether a session is "done" or "paused."
+        </div>
+      </div>
+      <div class="card-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-accent accent-risk"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-risk">Risk</span>
+          <span class="card-dot"></span>
+          <span class="card-source">PM feedback — 2 incidents</span>
+        </div>
+        <div class="card-text">The shared view exposes internal run IDs in the URL, confusing stakeholders</div>
+        <div class="card-detail">
+          Two PMs separately asked what the alphanumeric string in the shared URL meant, assuming it was a version number or error code. Internal identifiers leaking into shared surfaces undermine the "readable labels" principle.
+        </div>
+      </div>
+      <div class="card-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('expanded')">
+      <div class="card-accent accent-opportunity"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-type type-opportunity">Opportunity</span>
+          <span class="card-dot"></span>
+          <span class="card-source">Workflow observation</span>
+        </div>
+        <div class="card-text">Design Ops module completion dates could auto-populate the "next steps" field</div>
+        <div class="card-detail">
+          Designers manually copy completion dates into next steps text. This is error-prone and creates drift between the module status and the summary. Auto-populating would keep them in sync and reduce a repeated manual task.
+        </div>
+      </div>
+      <div class="card-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setView(mode) {
+      document.body.classList.toggle('shared-view', mode === 'shared');
+      document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === mode);
+      });
+      if (mode === 'shared') {
+        document.querySelectorAll('.card.expanded').forEach(c => c.classList.remove('expanded'));
+      }
+    }
+  </script>
+</body>
+</html>
