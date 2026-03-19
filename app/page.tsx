@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { Layers, Users, Trash2, Plus } from "lucide-react";
 import { useSessions, getCreatorToken } from "@/lib/design-store";
 import { useAdmin } from "@/hooks/use-admin";
