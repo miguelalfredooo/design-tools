@@ -1,7 +1,8 @@
 from crewai import Crew, Process, LLM
+from typing import Optional, Any
 
-from agents import create_oracle, create_meridian
-from tasks import create_frame_brief_task, create_synthesize_task
+from agents import create_pm, create_research_insights, create_product_design
+from tasks import create_frame_objective_task, create_synthesize_task, create_recommend_solution_task
 from tools import fetch_evidence
 
 
@@ -13,19 +14,73 @@ def get_llm() -> LLM:
     )
 
 
-def run_crew(prompt: str, objectives: list[dict]) -> str:
-    """Run the Design Ops crew with the given prompt and objectives."""
+def run_crew(
+    stage: str = "discovery",
+    problem_statement: Optional[str] = None,
+    objective: Optional[str] = None,
+    hypothesis: Optional[str] = None,
+    user_segment: Optional[str] = None,
+    metric: Optional[str] = None,
+    constraints: Optional[dict] = None,
+    research_data: Optional[dict] = None,
+) -> str:
+    """
+    Run the three-agent crew with modular inputs.
+
+    Args:
+        stage: 'discovery', 'validation', 'solution', or 'optimization'
+        problem_statement: The problem we're solving
+        objective: The business objective
+        hypothesis: What we're testing
+        user_segment: Who we're solving for
+        metric: What we're measuring
+        constraints: Timeline, technical, budget, scope
+        research_data: Dict with 'snowflake_results', 'surveys', 'prototypes_tested', 'images', etc.
+    """
     llm = get_llm()
 
-    oracle = create_oracle(llm)
-    meridian = create_meridian(llm, tools=[fetch_evidence])
+    # Initialize agents
+    pm_agent = create_pm(llm)
+    research_agent = create_research_insights(llm, tools=[fetch_evidence])
+    design_agent = create_product_design(llm)
 
-    brief_task = create_frame_brief_task(oracle, prompt, objectives)
-    synth_task = create_synthesize_task(meridian, prompt, objectives)
+    # Build context from inputs
+    context = {
+        "stage": stage,
+        "problem_statement": problem_statement,
+        "objective": objective,
+        "hypothesis": hypothesis,
+        "user_segment": user_segment,
+        "metric": metric,
+        "constraints": constraints or {},
+        "research_data": research_data or {},
+    }
+
+    # Build tasks based on stage
+    tasks = []
+
+    # PM always frames (if we have context to frame)
+    if any([objective, problem_statement, metric, constraints]):
+        frame_task = create_frame_objective_task(pm_agent, context)
+        tasks.append(frame_task)
+
+    # Research always synthesizes
+    synth_task = create_synthesize_task(research_agent, context)
+    tasks.append(synth_task)
+
+    # Design proposes solutions (except in discovery)
+    if stage != "discovery":
+        recommend_task = create_recommend_solution_task(design_agent, context)
+        tasks.append(recommend_task)
+
+    # Build crew with available agents and tasks
+    agents = [pm_agent, research_agent]
+    if stage != "discovery":
+        agents.append(design_agent)
 
     crew = Crew(
-        agents=[oracle, meridian],
-        tasks=[brief_task, synth_task],
+        agents=agents,
+        tasks=tasks,
         process=Process.sequential,
         verbose=True,
     )
@@ -38,16 +93,27 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
+    # Example 1: Discovery phase with minimal input
     result = run_crew(
-        prompt="What patterns are emerging from recent user research?",
-        objectives=[
-            {
-                "title": "Improve activation",
-                "metric": "Activation rate",
-                "target": "50%",
-                "description": "Increase new user activation from 40% to 50%",
-            }
-        ],
+        stage="discovery",
+        problem_statement="Users struggle to find relevant products in search",
+        user_segment="Mobile users, first-time visitors",
     )
-    print("\n=== CREW RESULT ===")
+    print("\n=== DISCOVERY RESULT ===")
     print(result)
+
+    # Example 2: Solution phase with full context
+    # result = run_crew(
+    #     stage="solution",
+    #     problem_statement="Users abandon checkout at payment step",
+    #     objective="Improve checkout conversion to 80%",
+    #     metric="Checkout completion rate",
+    #     constraints={"timeline": "4 weeks", "technical": "Payment provider limitation"},
+    #     research_data={
+    #         "snowflake_results": "18% drop-off at payment step",
+    #         "survey_responses": "Users report 'too many fields'",
+    #         "prototypes_tested": [{"name": "Auto-fill form", "votes": 9}],
+    #     },
+    # )
+    # print("\n=== SOLUTION RESULT ===")
+    # print(result)

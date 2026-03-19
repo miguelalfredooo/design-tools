@@ -1,44 +1,76 @@
 from crewai import Task, Agent
 
 
-def create_synthesize_task(agent: Agent, prompt: str, objectives: list[dict]) -> Task:
-    objectives_text = "\n".join(
-        f"- {obj.get('title', '')}: {obj.get('metric', '')} → {obj.get('target', '')}"
-        for obj in objectives
-    ) or "No specific objectives defined."
+def create_synthesize_task(agent: Agent, context: dict) -> Task:
+    """
+    Research & Insights synthesizes all available evidence.
+    Flexible based on what data and context is provided.
+    """
+    problem = context.get("problem_statement", "")
+    hypothesis = context.get("hypothesis", "")
+    metric = context.get("metric", "")
+    stage = context.get("stage", "discovery")
+    research_data = context.get("research_data", {})
+
+    # Build prompt based on available context
+    parts = [
+        "You are the Research & Insights Analyst. Your job is to synthesize evidence and surface patterns.\n"
+    ]
+
+    if problem:
+        parts.append(f"PROBLEM: {problem}")
+    if hypothesis:
+        parts.append(f"HYPOTHESIS TO TEST: {hypothesis}")
+    if metric:
+        parts.append(f"METRIC WE'RE MEASURING: {metric}")
+
+    # Describe available data
+    data_available = []
+    if research_data.get("snowflake_results"):
+        data_available.append("Quantitative data (SQL queries)")
+    if research_data.get("survey_responses"):
+        data_available.append("Survey feedback")
+    if research_data.get("prototypes_tested"):
+        data_available.append("Prototype test results and stakeholder votes")
+    if research_data.get("images"):
+        data_available.append("Design images/mockups")
+    if research_data.get("supabase_observations"):
+        data_available.append("Research observations")
+
+    if data_available:
+        parts.append(f"\nDATA AVAILABLE: {', '.join(data_available)}")
+    else:
+        parts.append(f"\nNOTE: Limited data available. Proceed with directional insights + stated assumptions.")
+
+    parts.extend([
+        "\nYour job:",
+        "1. Synthesize all available evidence using your two-pass method:",
+        "   - What does the data show? (direct findings)",
+        "   - What might it mean? (inferences + assumptions)",
+        "2. Label every finding with confidence: High / Medium / Low",
+        "3. Flag assumptions explicitly. Lead with assumptions for low-confidence findings.",
+        "4. Distinguish pain points from satisficing (users adapted to broken systems)",
+        "5. Always end with actionable next steps\n",
+        "Rules:",
+        "- Ground everything in what the data actually says",
+        "- Flag inferences vs. direct findings",
+        "- Directional insight with stated assumptions > silence",
+        "- Never fabricate evidence. If data is thin, say so.",
+    ])
 
     return Task(
-        description=(
-            f"You are Meridian, the User Research & Insight Analyst.\n\n"
-            f"ANALYSIS FOCUS: {prompt}\n\n"
-            f"BUSINESS OBJECTIVES TO MAP AGAINST:\n{objectives_text}\n\n"
-            f"Your job:\n"
-            f"1. Use the 'Fetch Research Evidence' tool to pull relevant observations, "
-            f"sessions, votes, and comments from the database\n"
-            f"2. Analyze the evidence using your two-pass method: what's in the data → what it likely means\n"
-            f"3. Map findings to the business objectives above\n"
-            f"4. Label every finding with a confidence level (High/Medium/Low)\n"
-            f"5. State assumptions explicitly\n"
-            f"6. End with concrete recommendations tied to specific objectives\n\n"
-            f"Rules:\n"
-            f"- Ground synthesis in what the data actually says\n"
-            f"- Flag inferences vs direct findings\n"
-            f"- Distinguish pain points from satisficing (users adapting to broken things)\n"
-            f"- A directional insight with stated assumptions is better than silence\n"
-            f"- Never fabricate evidence. If data is thin, say so."
-        ),
+        description="\n".join(parts),
         expected_output=(
-            "A structured synthesis that includes:\n"
-            "- SUBJECT: one-line summary of the key finding\n"
-            "- CONFIDENCE: high / medium / low\n"
-            "- ASSUMPTIONS: what this analysis takes as given\n"
-            "- FINDINGS: 2-5 key patterns found in the evidence, each with:\n"
-            "  - Pattern description\n"
-            "  - Evidence references (which observations, sessions, or votes support this)\n"
-            "  - Confidence level for this specific pattern\n"
-            "- OBJECTIVE MAPPING: how findings connect to each business objective\n"
-            "- RECOMMENDATIONS: 1-3 concrete design recommendations, each tied to a specific objective\n"
-            "- NEXT STEPS: what should happen next to validate or act on these findings"
+            "STRUCTURED SYNTHESIS that includes:\n"
+            "- SUBJECT: one-line finding or pattern\n"
+            "- CONFIDENCE: High / Medium / Low (with explanation)\n"
+            "- ASSUMPTIONS: what's taken as given\n"
+            "- FINDINGS: 2-5 patterns, each with:\n"
+            "    - Description\n"
+            "    - Evidence (data sources)\n"
+            "    - Confidence\n"
+            "- NEXT STEPS: how to validate or act on this\n"
+            "- MISSING CONTEXT: what data would make this stronger"
         ),
         agent=agent,
     )
