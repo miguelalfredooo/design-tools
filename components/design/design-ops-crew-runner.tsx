@@ -162,7 +162,7 @@ export function DesignOpsCrewRunner({
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Synthesis Tier
         </Label>
-        <RadioGroup value={synthesisT} onValueChange={(val) => setSynthesisTier(val as any)}>
+        <RadioGroup value={synthesisT} onValueChange={(val) => setSynthesisTier(val as "quick" | "balanced" | "in-depth")}>
           <div className="flex gap-3">
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="quick" id="tier-quick" />

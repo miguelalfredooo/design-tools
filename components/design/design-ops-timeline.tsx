@@ -1,17 +1,10 @@
 "use client";
 
-import { Brain, FlaskConical } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import type { AgentMessage } from "@/lib/design-ops-types";
 import {
   SynthesisCardQuick,
   SynthesisCardBalanced,
   SynthesisCardInDepth,
-  type SynthesisCardQuickProps,
-  type SynthesisCardBalancedProps,
-  type SynthesisCardInDepthProps,
 } from "@/components/design/synthesis-cards";
 
 // Parser functions for tier-specific crew output formats
@@ -176,18 +169,6 @@ interface DesignOpsTimelineProps {
   messages: AgentMessage[];
 }
 
-const AGENT_CONFIG: Record<string, { icon: typeof Brain; color: string; label: string }> = {
-  design_ops_manager: { icon: Brain, color: "text-violet-400", label: "ORACLE" },
-  research_synthesizer: { icon: FlaskConical, color: "text-emerald-400", label: "MERIDIAN" },
-};
-
-const CONFIDENCE_STYLES: Record<string, string> = {
-  high: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  medium: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  low: "bg-red-500/20 text-red-400 border-red-500/30",
-  "n/a": "bg-muted text-muted-foreground",
-};
-
 export function DesignOpsTimeline({ messages }: DesignOpsTimelineProps) {
   if (messages.length === 0) {
     return (
@@ -202,16 +183,14 @@ export function DesignOpsTimeline({ messages }: DesignOpsTimelineProps) {
   return (
     <div className="space-y-4">
       {messages.map((msg, i) => {
-        const agent = AGENT_CONFIG[msg.from] || AGENT_CONFIG.design_ops_manager;
-        const Icon = agent.icon;
         const isLast = i === messages.length - 1;
 
         // Common props for all card types
         const commonProps = {
-          from: msg.from as any,
+          from: msg.from as "research_insights" | "product_designer",
           fromName: msg.fromName || "",
           subject: msg.subject,
-          confidence: msg.confidence as any,
+          confidence: msg.confidence as "high" | "medium" | "low" | "n/a",
           timestamp: msg.timestamp,
           isLast,
         };
