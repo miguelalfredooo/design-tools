@@ -18,11 +18,21 @@ const CarrierTextarea = React.forwardRef<
     lg: "text-lg",
   };
 
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+
+    // Call the original onChange if provided
+    props.onChange?.(e as React.ChangeEvent<HTMLTextAreaElement>);
+  };
+
   return (
     <textarea
       ref={ref}
+      onInput={handleInput}
       className={cn(
-        "w-full bg-transparent outline-none px-0 resize-none",
+        "w-full bg-transparent outline-none px-0 resize-none overflow-hidden",
         bordered ? "border border-border" : "border-none",
         `placeholder:text-muted-foreground/${placeholderOpacity}`,
         sizeClasses[designSize],
