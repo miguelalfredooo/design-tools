@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3500",
+    "dev": "npm run dev:all",
+    "dev:all": "npm run crew:start & npm run next:dev",
+    "next:dev": "next dev --port 3500",
+    "crew:start": "cd crew && python main.py",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest",
-    "crew": "cd crew && ./start.sh"
+    "test": "jest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
