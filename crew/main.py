@@ -105,7 +105,7 @@ async def run_crew(request: Request):
                     "subject": "Objective frame",
                     "priority": "high",
                     "confidence": "n/a",
-                    "body": pm_output,
+                    "body": json.dumps(pm_output) if isinstance(pm_output, dict) else pm_output,
                     "timestamp": datetime.now().isoformat(),
                 }),
             }
@@ -132,7 +132,7 @@ async def run_crew(request: Request):
                         "subject": "Evidence synthesis",
                         "priority": "high",
                         "confidence": "medium",
-                        "body": research_output,
+                        "body": json.dumps(research_output) if isinstance(research_output, dict) else research_output,
                         "timestamp": datetime.now().isoformat(),
                     }),
                 }
@@ -155,7 +155,7 @@ async def run_crew(request: Request):
                         "subject": "Evidence synthesis",
                         "priority": "high",
                         "confidence": "medium",
-                        "body": research_output,
+                        "body": json.dumps(research_output) if isinstance(research_output, dict) else research_output,
                         "timestamp": datetime.now().isoformat(),
                     }),
                 }
@@ -170,7 +170,7 @@ async def run_crew(request: Request):
                         "subject": "Design recommendation" if stage != "discovery" else "Design direction",
                         "priority": "high",
                         "confidence": "medium",
-                        "body": design_output,
+                        "body": json.dumps(design_output) if isinstance(design_output, dict) else design_output,
                         "timestamp": datetime.now().isoformat(),
                     }),
                 }
@@ -186,11 +186,15 @@ async def run_crew(request: Request):
             }
 
         except Exception as e:
+            import traceback
+            print(f"\n❌ ERROR in crew execution:\n{traceback.format_exc()}\n")
             yield {
                 "event": "error",
                 "data": json.dumps({
                     "run_id": run_id,
                     "error": str(e),
+                    "error_type": type(e).__name__,
+                    "traceback": traceback.format_exc(),
                     "timestamp": datetime.now().isoformat(),
                 }),
             }

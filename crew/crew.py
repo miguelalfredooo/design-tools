@@ -73,6 +73,8 @@ def run_crew(
     try:
         pm_output = parse_and_validate_pm(pm_output_raw)
     except Exception as e:
+        import traceback
+        print(f"\n❌ PM VALIDATION ERROR:\n{traceback.format_exc()}\nRaw output: {pm_output_raw[:500]}\n")
         raise ValueError(f"PM output validation failed: {str(e)}")
 
     # GATE 1: Check if PM passed gates
@@ -102,6 +104,8 @@ def run_crew(
     try:
         research_output = parse_and_validate_research(research_output_raw)
     except Exception as e:
+        import traceback
+        print(f"\n❌ RESEARCH VALIDATION ERROR:\n{traceback.format_exc()}\nRaw output: {research_output_raw[:500]}\n")
         raise ValueError(f"Research output validation failed: {str(e)}")
 
     # GATE 2: Check if Research identified highest-risk assumption
@@ -132,6 +136,8 @@ def run_crew(
     try:
         design_output = parse_and_validate_design(design_output_raw)
     except Exception as e:
+        import traceback
+        print(f"\n❌ DESIGN VALIDATION ERROR:\n{traceback.format_exc()}\nRaw output: {design_output_raw[:500]}\n")
         raise ValueError(f"Design output validation failed: {str(e)}")
 
     # Return individual outputs

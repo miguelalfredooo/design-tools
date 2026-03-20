@@ -20,9 +20,14 @@ def extract_json(text: str) -> Dict[str, Any]:
         if json_match:
             json_str = json_match.group(0)
         else:
+            print(f"\n❌ NO JSON FOUND. Text: {text[:500]}\n")
             raise ValueError(f"No JSON found in output: {text[:200]}")
 
-    return json.loads(json_str)
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        print(f"\n❌ JSON DECODE ERROR:\n{e}\nJSON string: {json_str[:500]}\n")
+        raise
 
 
 def validate_pm_output(data: Dict[str, Any]) -> Dict[str, Any]:
