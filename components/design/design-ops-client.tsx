@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Brain, ChevronDown } from "lucide-react";
+import { Brain, ChevronDown, HelpCircle } from "lucide-react";
 import { DesignOpsCrewRunner } from "@/components/design/design-ops-crew-runner";
 import { DesignOpsTimeline } from "@/components/design/design-ops-timeline";
 import { useAdmin } from "@/hooks/use-admin";
 import { cn } from "@/lib/utils";
 import { CarrierInput } from "@/components/ui/carrier-input";
 import { CarrierTextarea } from "@/components/ui/carrier-textarea";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import type { Objective, AgentMessage, DesignOutput } from "@/lib/design-ops-types";
 
 export function DesignOpsClient() {
@@ -139,7 +143,19 @@ export function DesignOpsClient() {
               {/* Problem / Goal */}
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1.5">
-                  <div className="text-sm font-semibold text-foreground">Problem</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-foreground">Problem</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle className="size-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        Describe the specific user pain point with concrete details. Avoid vague terms. Example: "Creators struggle to maintain posting frequency because manual content scheduling across platforms is time-consuming."
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <CarrierTextarea
                     placeholder="What problem does this solve?"
                     value={problem}
