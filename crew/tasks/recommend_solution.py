@@ -16,7 +16,10 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
 
     # Build prompt based on available context
     parts = [
-        "Propose 2-3 specific MVP ideas from a design lens. Make them concrete — not 'improve UX' but 'change the checkout flow from 7 steps to 3'.\n"
+        "Design 2-3 specific ideas. Think in flows, interactions, craft. Be concrete about what changes:\n"
+        "- Bad: 'Improve the onboarding'\n"
+        "- Good: 'Remove role selector, auto-detect from email domain, cut onboarding from 5 screens to 2'\n\n"
+        "Show your thinking. What's intuitive? What's feasible? What breaks?\n"
     ]
 
     if problem:
@@ -87,13 +90,8 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
         )
     else:  # balanced (default)
         expected_output = (
-            "DESIGN RECOMMENDATION that includes:\n"
-            "- DIRECTION: one-sentence design approach\n"
-            "- RATIONALE: why this (grounded in research, consensus, constraints)\n"
-            "- KEY INTERACTIONS: 3-5 core user flows\n"
-            "- TRADE-OFFS: what you're optimizing for vs. what you're trading\n"
-            "- FEASIBILITY: timeline, technical risks, resource needs\n"
-            "- STAKEHOLDER ALIGNMENT: which existing explorations this builds on\n"
+            "Design 2-3 specific ideas. For each: what changes, why it works, what the craft details are, "
+            "what's the feasibility, what do we test. Write like you're describing a prototype to the team, not filling a form.\n"
             "- NEXT STEP: prototype → test → implement\n"
             "- LINKS: references to Figma, explorations, prototypes"
         )
