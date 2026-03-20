@@ -3,140 +3,106 @@ from crewai import Task, Agent
 
 def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
     """
-    Product Design proposes solutions based on research insights and constraints.
-    Evaluates trade-offs and feasibility.
-    Tier affects output depth: quick (direction only), balanced (standard), in-depth (thorough).
+    Designer proposes the most direct path to validating the highest-risk assumption Research handed over.
+    Output is a handoff, not a design document.
     """
     problem = context.get("problem_statement", "")
     metric = context.get("metric", "")
     constraints = context.get("constraints", {})
     stage = context.get("stage", "solution")
-    synthesis_tier = context.get("synthesis_tier", "balanced")
-    research_data = context.get("research_data", {})
+    depth = context.get("synthesis_tier", "balanced")
+    research_assumptions = context.get("research_assumptions", [])
+    highest_risk_assumption = context.get("highest_risk_assumption", "")
+    exploration_data = context.get("research_data", {})
+    user_segment = context.get("user_segment", "")
 
-    # Build prompt based on available context
+    # Gate check
     parts = [
-        "**YOU ARE PRODUCT DESIGNER.** Your job is NOT to summarize research or PM strategy.\n"
-        "Focus ONLY on: Interaction design, specific flows, craft details, feasibility.\n"
-        "Design 2-3 concrete ideas. Think in flows, interactions, what specifically changes:\n"
-        "- Bad: 'Improve the onboarding'\n"
-        "- Good: 'Remove role selector, auto-detect from email domain, cut onboarding from 5 screens to 2'\n\n"
-        "Show your design thinking. What's the interaction? What's intuitive? What's feasible? What breaks?\n"
+        "**GATE CHECK — answer these before proposing:**\n"
+        "1. What user behavior is this solution assuming? (Name it explicitly — don't let it stay implicit)\n"
+        "2. Does this respect PM's hard constraints? (If not, name the conflict)\n"
+        "3. Is there prior exploration to build on?\n"
+        "   - If yes → extend consensus, explain deviations\n"
+        "   - If no → discovery mode, solutions are provocations not proposals\n\n"
     ]
 
     if problem:
-        parts.append(f"PROBLEM: {problem}")
+        parts.append(f"**Problem:** {problem}")
     if metric:
-        parts.append(f"METRIC TO IMPROVE: {metric}")
+        parts.append(f"**Metric:** {metric}")
+    if user_segment:
+        parts.append(f"**User segment:** {user_segment}")
+
     if constraints:
-        constraint_text = "\n".join(f"  - {k}: {v}" for k, v in constraints.items())
-        parts.append(f"CONSTRAINTS:\n{constraint_text}")
+        constraint_text = "\n  - ".join(f"{k}: {v}" for k, v in constraints.items())
+        parts.append(f"\n**Hard constraints (PM's non-negotiables):**\n  - {constraint_text}")
 
-    # Reference existing explorations or guide design-driven discovery
-    has_research = research_data.get("prototypes_tested") or research_data.get("images")
+    if highest_risk_assumption:
+        parts.append(f"\n**Highest-risk assumption to validate:**\n{highest_risk_assumption}")
 
-    if has_research:
-        if research_data.get("prototypes_tested"):
-            parts.append(f"\nEXISTING EXPLORATIONS: Review the prototypes that have been tested and voted on.")
-            parts.append(f"Build on consensus where it exists. If you deviate, explain why.")
+    # Exploration data check
+    has_exploration = exploration_data.get("prototypes_tested") or exploration_data.get("images")
 
-        if research_data.get("images"):
-            parts.append(f"\nDESIGN REFERENCES: Consider existing images/mockups when proposing your solution.")
-    else:
-        parts.append(
-            f"\nNOTE: No design exploration data yet. That's fine — ground your solution in the problem frame and constraints.\n"
-            f"Your job: Propose concrete designs based on the problem statement, metric, and feasibility.\n"
-            f"Be specific about interactions and flows. Then propose the validation approach:\n"
-            f"  - What should we prototype first?\n"
-            f"  - What specific user flows should we test?\n"
-            f"  - How will we know if this direction is right?"
-        )
-
-    # Design tier guidance
-    if synthesis_tier == "quick":
+    # Scenario-based guidance
+    if has_exploration:
         parts.extend([
-            "\nDESIGN TIER: QUICK",
-            "Be snappy. Direction only—one clear approach, top 2 trade-offs.",
-            "Skip detailed interactions and feasibility deep dives.",
+            "\n**SCENARIO A — with exploration data:**\n"
+            "Build on existing consensus:\n"
+            "- Reference what was tested and what signal it produced\n"
+            "- Extend the direction that earned most confidence\n"
+            "- If deviating from consensus: name why explicitly\n"
         ])
-    elif synthesis_tier == "in-depth":
+    else:
         parts.extend([
-            "\nDESIGN TIER: IN-DEPTH",
-            "Go thorough. Consider why you didn't choose alternative approaches.",
-            "Detail feasibility, risks, and all stakeholder considerations.",
+            "\n**SCENARIO B — discovery mode (no exploration data):**\n"
+            "Solutions are provocations — concrete enough to react to, not precious enough to defend:\n"
+            "- Name the specific interaction being tested\n"
+            "- State the user behavior assumption being tested\n"
+            "- Propose the smallest thing to build that tests the assumption\n"
         ])
 
     parts.extend([
-        "\n**Propose 2-3 specific MVP ideas. Be concrete:**",
-        "- Bad: 'Improve the onboarding experience'",
-        "- Good: 'Cut onboarding from 5 screens to 2 by auto-detecting role and skipping irrelevant questions'",
-        "\nFor each idea:",
-        "1. What's the specific change? (not generic 'improve X')",
-        "2. Why this? (grounded in research, user feedback, metric impact)",
-        "3. What's the trade-off? (speed vs. delight, depth vs. simplicity, etc.)",
-        "4. How feasible? (timeline, tech risk, resource needs)",
-        "5. What do we test first? (specific validation step)",
-        "\nConsider existing explorations and stakeholder votes. Build on consensus.",
+        "\n**For each idea, answer:**\n"
+        "1. **Specific change** — what exactly in the interface or flow\n"
+        "2. **Why** — which user behavior or finding this responds to\n"
+        "3. **Trade-off** — what you lose by choosing this\n"
+        "4. **Second-order effect** — one downstream consequence to monitor\n"
+        "5. **Feasibility** — engineering lift estimate\n"
+        "6. **Validation** — what specific interaction to prototype first\n\n"
+        "**Propose 2-3 ideas** (not vague 'improvements')\n\n"
+        "**Close with critique anchor:**\n"
+        "> The objective this design serves is [___].\n"
+        "> If someone pushes back, the trade-off to surface is:\n"
+        "> choosing [alternative] means giving up [specific thing] for the user."
     ])
 
-    # Tier-specific expected output
-    if synthesis_tier == "quick":
-        expected_output = (
-            "QUICK DESIGN DIRECTION (snappy, directional):\n"
-            "- DIRECTION: one-sentence approach\n"
-            "- WHY: brief rationale\n"
-            "- TOP 2 TRADE-OFFS: what you're optimizing vs. what you're trading\n"
-            "- NEXT STEP: one action (prototype or test)"
+    # Depth guidance
+    if depth == "quick":
+        parts.append(
+            "\n**DEPTH: QUICK**\n"
+            "One direction + the trade-off + the next prototype to build."
         )
-    elif synthesis_tier == "in-depth":
-        if has_research:
-            expected_output = (
-                "DETAILED DESIGN RECOMMENDATION:\n"
-                "- DIRECTION: one-sentence design approach\n"
-                "- RATIONALE: why this (grounded in research, consensus, constraints)\n"
-                "- KEY INTERACTIONS: 3-5 core user flows\n"
-                "- TRADE-OFFS: what you're optimizing for vs. what you're trading\n"
-                "- ALTERNATIVES CONSIDERED: why you didn't choose approach X, Y, or Z\n"
-                "- FEASIBILITY: timeline, technical risks, resource needs, org friction\n"
-                "- STAKEHOLDER ALIGNMENT: which existing explorations this builds on\n"
-                "- RISKS & MITIGATIONS: what could go wrong and how to prevent it\n"
-                "- NEXT STEP: prototype → test → implement\n"
-                "- LINKS: references to Figma, explorations, prototypes"
-            )
-        else:
-            expected_output = (
-                "DESIGN RECOMMENDATION WITH VALIDATION ROADMAP:\n"
-                "- DIRECTION: one-sentence design approach grounded in the problem frame\n"
-                "- RATIONALE: why this solves the problem (not grounded in user research yet — be explicit about assumptions)\n"
-                "- KEY INTERACTIONS: 3-5 core user flows and craft decisions\n"
-                "- TRADE-OFFS: what you're optimizing vs. what you're trading\n"
-                "- ALTERNATIVES CONSIDERED: why you didn't choose approach X, Y, or Z\n"
-                "- FEASIBILITY: timeline, technical risks, resource needs\n"
-                "- ASSUMPTIONS TO VALIDATE: what user behavior or preferences we're assuming\n"
-                "- PROTOTYPE ROADMAP: what to build first, in what order, and why\n"
-                "- VALIDATION PLAN: what to test, with whom, and what we'll learn\n"
-                "- RISKS & MITIGATIONS: what could be wrong about our assumptions and how to catch it\n"
-                "- NEXT STEP: build prototype → run usability test → iterate\n"
-                "Write like you're designing an experiment, not implementing a known solution."
-            )
-    else:  # balanced (default)
-        if has_research:
-            expected_output = (
-                "Design 2-3 specific ideas. For each: what changes, why it works, what the craft details are, "
-                "what's the feasibility, what do we test. Write like you're describing a prototype to the team, not filling a form.\n"
-                "- NEXT STEP: prototype → test → implement\n"
-                "- LINKS: references to Figma, explorations, prototypes"
-            )
-        else:
-            expected_output = (
-                "Design 2-3 specific ideas grounded in the problem frame. For each: what specifically changes, "
-                "why this solves the problem, what the key interactions are, feasibility, and what to validate first.\n"
-                "Be concrete about flows and craft. Then lay out the validation roadmap:\n"
-                "- PROTOTYPE FOCUS: what core interaction to build first\n"
-                "- TEST APPROACH: what specific user flows or scenarios to test\n"
-                "- SUCCESS CRITERIA: how we'll know this direction is right\n"
-                "Write like you're proposing an experiment, not assuming we have user data."
-            )
+    elif depth == "in-depth":
+        parts.append(
+            "\n**DEPTH: IN-DEPTH**\n"
+            "Full exploration: alternatives considered, feasibility, assumption map, "
+            "prototype roadmap, validation plan, risks."
+        )
+
+    expected_output = (
+        "Handoff output:\n\n"
+        "2–3 ideas with:\n"
+        "- Specific change (not generic)\n"
+        "- User behavior being tested\n"
+        "- Trade-off explicitly named\n"
+        "- Second-order effect to monitor\n"
+        "- Feasibility estimate\n"
+        "- Prototype priority\n\n"
+        "Close with critique anchor:\n"
+        "> The objective this design serves is [___].\n"
+        "> Choosing [alternative] means giving up [specific thing].\n\n"
+        "No design document. Handoff only."
+    )
 
     return Task(
         description="\n".join(parts),

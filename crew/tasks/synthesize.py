@@ -3,102 +3,93 @@ from crewai import Task, Agent
 
 def create_synthesize_task(agent: Agent, context: dict) -> Task:
     """
-    Research & Insights synthesizes all available evidence.
-    Flexible based on what data and context is provided.
-    Tier affects output depth: quick (snappy), balanced (standard), in-depth (thorough).
+    Research pressure-tests PM's ranked assumptions.
+    Output is a handoff to Designer, not a synthesis document.
     """
     problem = context.get("problem_statement", "")
-    hypothesis = context.get("hypothesis", "")
     metric = context.get("metric", "")
     stage = context.get("stage", "discovery")
-    synthesis_tier = context.get("synthesis_tier", "balanced")
+    depth = context.get("synthesis_tier", "balanced")
     research_data = context.get("research_data", {})
+    pm_assumptions = context.get("pm_assumptions", [])
+    user_segment = context.get("user_segment", "")
 
-    # Build prompt based on available context
+    # Gate check
     parts = [
-        "**YOU ARE RESEARCH & INSIGHTS.** Your job is NOT to repeat the PM's strategy frame.\n"
-        "Focus ONLY on: What does the evidence show? What are we confident about? What's missing?\n"
-        "Synthesize the data. Surface what we know vs. what we're assuming. Be specific about confidence levels.\n"
+        "**GATE CHECK — answer these before synthesizing:**\n"
+        "1. Are we looking at behavior or self-report?\n"
+        "2. Is this a pain point (blocks progress) or a workaround (users adapted)?\n"
+        "3. Which PM assumptions does data speak to? Which are still untouched?\n\n"
     ]
 
     if problem:
-        parts.append(f"PROBLEM: {problem}")
-    if hypothesis:
-        parts.append(f"HYPOTHESIS TO TEST: {hypothesis}")
+        parts.append(f"**Problem:** {problem}")
     if metric:
-        parts.append(f"METRIC WE'RE MEASURING: {metric}")
+        parts.append(f"**Metric:** {metric}")
+    if user_segment:
+        parts.append(f"**User segment:** {user_segment}")
 
-    # Describe available data
+    # PM assumptions to pressure-test
+    if pm_assumptions:
+        parts.append("\n**PM's ranked assumptions to pressure-test:**")
+        for i, assumption in enumerate(pm_assumptions, 1):
+            parts.append(f"{i}. {assumption}")
+
+    # Data available
     data_available = []
     if research_data.get("snowflake_results"):
-        data_available.append("Quantitative data (SQL queries)")
+        data_available.append("Quantitative data (SQL)")
     if research_data.get("survey_responses"):
-        data_available.append("Survey feedback")
+        data_available.append("Survey responses")
     if research_data.get("prototypes_tested"):
-        data_available.append("Prototype test results and stakeholder votes")
-    if research_data.get("images"):
-        data_available.append("Design images/mockups")
-    if research_data.get("supabase_observations"):
-        data_available.append("Research observations")
+        data_available.append("Prototype test results")
+    if research_data.get("qualitative"):
+        data_available.append("Interview notes")
 
     if data_available:
-        parts.append(f"\nDATA AVAILABLE: {', '.join(data_available)}")
+        parts.append(f"\n**Data available:** {', '.join(data_available)}")
     else:
-        parts.append(
-            f"\nNOTE: No research data in database yet. That's fine — work with the strategy frame provided. "
-            f"Ground your synthesis in the problem statement, hypothesis, and user segment. "
-            f"Propose concrete next steps to validate your thinking."
-        )
+        parts.append("\n**Data available:** None — use discovery mode")
 
-    # Synthesis tier guidance
-    if synthesis_tier == "quick":
-        parts.extend([
-            "\nSYNTHESIS TIER: QUICK",
-            "Be snappy and directional. Surface 2-3 key patterns only.",
-            "Skip nuance and competing interpretations. Just the headline findings.",
-        ])
-    elif synthesis_tier == "in-depth":
-        parts.extend([
-            "\nSYNTHESIS TIER: IN-DEPTH",
-            "Go deep. Explore competing interpretations, contradictions, and underlying tensions.",
-            "Show your reasoning. Why might the data point to multiple conclusions?",
-        ])
-
+    # Scenario-based guidance
     parts.extend([
-        "\nYour job:",
-        "1. Synthesize what's available (or what we can infer from the problem/objective)",
-        "2. Be specific about: what we know, what we're assuming, confidence levels",
-        "3. Distinguish pain points from workarounds users adapted to",
-        "4. **Always end with concrete next steps** — what to test, research, or build",
-        "   - If data is thin, propose what to gather (surveys, interviews, analytics, prototypes)",
-        "   - Make it specific: 'Talk to 5 new user segments in X role' not 'do more research'\n",
-        "Rules:",
-        "- No false conclusions, but directional thinking is better than waiting",
-        "- Flag assumptions explicitly. Confidence levels matter.",
-        "- Missing database data ≠ missing opportunities. Use the problem frame to move forward",
-        "- End every synthesis with a *specific* validation roadmap",
+        "\n**SCENARIO A — with data:**\n"
+        "For each HIGH-risk PM assumption:\n"
+        "- Confirm / Contradict / Inconclusive\n"
+        "- Distinguish: what data shows vs. inference\n"
+        "- Confidence: Known (behavior, multiple sources) / Probable (self-report) / Assumed (no data)\n"
+        "- Pain vs. workaround? If workaround, is pain acute enough to motivate change?\n"
+        "- Name one finding team will want to dismiss — why they shouldn't\n\n"
+        "**SCENARIO B — without data:**\n"
+        "- Restate top 2 HIGH-risk assumptions as testable hypotheses\n"
+        "- Propose ONE specific research action per hypothesis\n"
+        "  (not 'do more research' — e.g., '5 contextual interviews with X role, focused on Y moment')\n"
+        "- Flag: solutions should be provocations when in discovery mode\n\n"
+        "**ALWAYS close with:**\n"
+        "> To move [highest-risk assumption] from assumed → known, we need: [specific thing]\n"
+        "Designer will prototype against this assumption."
     ])
 
-    # Tier-specific expected output
-    if synthesis_tier == "quick":
-        expected_output = (
-            "Snappy findings that fit a Slack message. One headline. 2-3 key insights with confidence levels. "
-            "One next step. Don't over-explain — we want the signal, not the noise."
+    # Depth guidance
+    if depth == "quick":
+        parts.append(
+            "\n**DEPTH: QUICK**\nSurface 2–3 key findings. Skip nuance. Headline only."
         )
-    elif synthesis_tier == "in-depth":
-        expected_output = (
-            "Deep synthesis that explores competing interpretations. Show your reasoning. "
-            "For each finding: what the data shows, why it matters, confidence level, what we're assuming, "
-            "and what would prove it wrong. Include what data we're still missing. "
-            "Write for thoughtful people who want to understand, not just be told."
+    elif depth == "in-depth":
+        parts.append(
+            "\n**DEPTH: IN-DEPTH**\nExplore competing interpretations. Show reasoning. "
+            "What would prove each finding wrong?"
         )
-    else:  # balanced (default)
-        expected_output = (
-            "Clear, actionable synthesis written for the PM and design team. "
-            "Lead with the headline finding. Then walk through: what the data shows, why it matters, "
-            "confidence level, key assumptions, and what to do next. "
-            "Use plain language. Bold the key insights. Skip bureaucratic sections."
-        )
+
+    expected_output = (
+        "Handoff to Designer:\n\n"
+        "1. Pressure-test result (Confirm/Contradict/Inconclusive per assumption)\n"
+        "2. Confidence ratings (Known/Probable/Assumed)\n"
+        "3. One finding to defend against dismissal\n"
+        "4. Pain vs. workaround call\n"
+        "5. Closing line: 'To move [assumption] from assumed → known, we need [specific thing]'\n\n"
+        "No document. Handoff only."
+    )
 
     return Task(
         description="\n".join(parts),
