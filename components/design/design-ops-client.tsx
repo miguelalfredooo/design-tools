@@ -107,20 +107,22 @@ export function DesignOpsClient() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Problem</div>
-                  <CarrierInput
+                  <CarrierTextarea
                     placeholder="What problem does this solve?"
                     value={problem}
                     onChange={(e) => setProblem(e.target.value)}
                     designSize="sm"
+                    rows={3}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Goal</div>
-                  <CarrierInput
+                  <CarrierTextarea
                     placeholder="What's the desired outcome?"
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                     designSize="sm"
+                    rows={3}
                   />
                 </div>
               </div>
@@ -129,20 +131,22 @@ export function DesignOpsClient() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Audience</div>
-                  <CarrierInput
+                  <CarrierTextarea
                     placeholder="Who is this for?"
                     value={audience}
                     onChange={(e) => setAudience(e.target.value)}
                     designSize="sm"
+                    rows={3}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Constraints</div>
-                  <CarrierInput
+                  <CarrierTextarea
                     placeholder="Any limitations?"
                     value={constraints}
                     onChange={(e) => setConstraints(e.target.value)}
                     designSize="sm"
+                    rows={3}
                   />
                 </div>
               </div>
