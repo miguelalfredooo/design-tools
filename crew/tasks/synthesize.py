@@ -16,7 +16,8 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
 
     # Build prompt based on available context
     parts = [
-        "You are the Research & Insights Analyst. Your job is to synthesize evidence and surface patterns.\n"
+        "Synthesize the evidence. Surface what the data actually shows and what it might mean. "
+        "Be confident about findings, transparent about assumptions.\n"
     ]
 
     if problem:
@@ -77,39 +78,22 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
     # Tier-specific expected output
     if synthesis_tier == "quick":
         expected_output = (
-            "QUICK SYNTHESIS (snappy, directional):\n"
-            "- HEADLINE: one sentence summarizing the top finding\n"
-            "- KEY PATTERNS: 2-3 bullet points (no deep explanation)\n"
-            "- CONFIDENCE: High / Medium / Low\n"
-            "- NEXT STEP: one actionable step to validate or act"
+            "Snappy findings that fit a Slack message. One headline. 2-3 key insights with confidence levels. "
+            "One next step. Don't over-explain — we want the signal, not the noise."
         )
     elif synthesis_tier == "in-depth":
         expected_output = (
-            "IN-DEPTH SYNTHESIS (thorough, reasoned):\n"
-            "- SUBJECT: one-line finding or pattern\n"
-            "- CONFIDENCE: High / Medium / Low (with detailed explanation)\n"
-            "- ASSUMPTIONS: what's taken as given + why\n"
-            "- FINDINGS: 2-5 patterns, each with:\n"
-            "    - Description\n"
-            "    - Evidence (data sources)\n"
-            "    - Confidence\n"
-            "    - Why this interpretation? (competing possibilities)\n"
-            "- COMPETING INTERPRETATIONS: if data supports multiple conclusions, name them\n"
-            "- NEXT STEPS: how to validate or act on this\n"
-            "- MISSING CONTEXT: what data would strengthen or challenge this"
+            "Deep synthesis that explores competing interpretations. Show your reasoning. "
+            "For each finding: what the data shows, why it matters, confidence level, what we're assuming, "
+            "and what would prove it wrong. Include what data we're still missing. "
+            "Write for thoughtful people who want to understand, not just be told."
         )
     else:  # balanced (default)
         expected_output = (
-            "STRUCTURED SYNTHESIS that includes:\n"
-            "- SUBJECT: one-line finding or pattern\n"
-            "- CONFIDENCE: High / Medium / Low (with explanation)\n"
-            "- ASSUMPTIONS: what's taken as given\n"
-            "- FINDINGS: 2-5 patterns, each with:\n"
-            "    - Description\n"
-            "    - Evidence (data sources)\n"
-            "    - Confidence\n"
-            "- NEXT STEPS: how to validate or act on this\n"
-            "- MISSING CONTEXT: what data would make this stronger"
+            "Clear, actionable synthesis written for the PM and design team. "
+            "Lead with the headline finding. Then walk through: what the data shows, why it matters, "
+            "confidence level, key assumptions, and what to do next. "
+            "Use plain language. Bold the key insights. Skip bureaucratic sections."
         )
 
     return Task(

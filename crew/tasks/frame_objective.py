@@ -13,37 +13,37 @@ def create_frame_objective_task(agent: Agent, context: dict) -> Task:
     stage = context.get("stage", "discovery")
 
     # Build prompt based on available context
-    parts = ["You are the Product Manager. Your job is to frame what we're solving and why."]
+    parts = [
+        "Frame the problem and strategy. Make the case for why we're solving this now, "
+        "what we're measuring, and what done looks like for this stage.\n"
+    ]
 
     if problem:
-        parts.append(f"\nPROBLEM: {problem}")
+        parts.append(f"**Problem:** {problem}")
     if objective:
-        parts.append(f"OBJECTIVE: {objective}")
+        parts.append(f"**Objective:** {objective}")
     if metric:
-        parts.append(f"METRIC: {metric}")
+        parts.append(f"**Metric:** {metric}")
     if constraints:
-        constraint_text = "\n".join(f"  - {k}: {v}" for k, v in constraints.items())
-        parts.append(f"CONSTRAINTS:\n{constraint_text}")
+        constraint_text = "\n  - ".join(f"{k}: {v}" for k, v in constraints.items())
+        parts.append(f"**Constraints:**\n  - {constraint_text}")
 
     parts.extend([
-        "\nYour job:",
-        f"1. Articulate the business case (why are we solving this? what metric matters?)",
-        f"2. Name what's known vs. assumed",
-        f"3. Surface constraints that will affect the solution",
-        f"4. Set clear success criteria for this stage ({stage})",
-        f"\nYour output should be concise and actionable. Name trade-offs directly.",
+        "\nBe direct and strategic. Show your thinking. This is the north star for the team.",
+        "- Name the business case and why *now*",
+        "- Distinguish what's known from what we're assuming",
+        "- Surface hard constraints (timeline, technical, scope, people)",
+        "- Set success criteria for this stage with a realistic timeline",
+        "- Call out trade-offs explicitly. What are we *not* solving for?",
     ])
 
     return Task(
         description="\n".join(parts),
         expected_output=(
-            "OBJECTIVE FRAME that includes:\n"
-            "- PROBLEM: one-line problem statement\n"
-            "- OBJECTIVE: what success looks like\n"
-            "- METRIC: what we're measuring\n"
-            "- CONSTRAINTS: timeline, technical, scope\n"
-            "- SUCCESS CRITERIA: how we know this worked\n"
-            "- ASSUMPTIONS: what we're taking as given"
+            "Strategic frame that's clear enough to brief the team. "
+            "Include: the problem, why we're solving it now, what success looks like (with timeline), "
+            "constraints that matter, what we're assuming, and what we're explicitly not solving. "
+            "Use natural language — write like you're convincing someone in a meeting, not filling a form."
         ),
         agent=agent,
     )
