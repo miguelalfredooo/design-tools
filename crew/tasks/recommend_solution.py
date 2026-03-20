@@ -16,7 +16,7 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
 
     # Build prompt based on available context
     parts = [
-        "You are the Product Designer. Your job is to propose solutions grounded in research insights.\n"
+        "Propose 2-3 specific MVP ideas from a design lens. Make them concrete — not 'improve UX' but 'change the checkout flow from 7 steps to 3'.\n"
     ]
 
     if problem:
@@ -50,13 +50,16 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
         ])
 
     parts.extend([
-        "\nYour job:",
-        "1. Propose a design direction grounded in the research insights above",
-        "2. Consider existing explorations and stakeholder votes (consensus = less friction)",
-        "3. Name key trade-offs: what you're optimizing for vs. what you're trading away",
-        "4. Surface feasibility constraints early (timeline, technical, resources)",
-        "5. Propose next steps (prototype, test, implement)",
-        "\nBe concise. Name assumptions about users, technical constraints, and org friction.",
+        "\n**Propose 2-3 specific MVP ideas. Be concrete:**",
+        "- Bad: 'Improve the onboarding experience'",
+        "- Good: 'Cut onboarding from 5 screens to 2 by auto-detecting role and skipping irrelevant questions'",
+        "\nFor each idea:",
+        "1. What's the specific change? (not generic 'improve X')",
+        "2. Why this? (grounded in research, user feedback, metric impact)",
+        "3. What's the trade-off? (speed vs. delight, depth vs. simplicity, etc.)",
+        "4. How feasible? (timeline, tech risk, resource needs)",
+        "5. What do we test first? (specific validation step)",
+        "\nConsider existing explorations and stakeholder votes. Build on consensus.",
     ])
 
     # Tier-specific expected output
