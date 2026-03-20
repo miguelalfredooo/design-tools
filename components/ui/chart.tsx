@@ -69,10 +69,10 @@ function ChartContainer({
     // Suppress Recharts ResponsiveContainer dimension warning in development
     if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
       const originalWarn = console.warn
-      console.warn = (...args: any[]) => {
+      console.warn = (...args: unknown[]) => {
         if (
-          args[0]?.includes?.("width(-1)") ||
-          args[0]?.includes?.("height(-1)")
+          typeof args[0] === "string" &&
+          (args[0].includes("width(-1)") || args[0].includes("height(-1)"))
         ) {
           return
         }

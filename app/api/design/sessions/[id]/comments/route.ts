@@ -60,27 +60,6 @@ export async function POST(
   }
   const { optionId, voterId, voterName, body: commentBody, xPct, yPct } = body;
 
-  if (!optionId || !voterId || !voterName?.trim()) {
-    return NextResponse.json(
-      { error: "Missing optionId, voterId, or voterName" },
-      { status: 400 }
-    );
-  }
-
-  if (!commentBody?.trim() || commentBody.trim().length > 280) {
-    return NextResponse.json(
-      { error: "Comment body must be 1-280 characters" },
-      { status: 400 }
-    );
-  }
-
-  if (typeof xPct !== "number" || typeof yPct !== "number" || xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) {
-    return NextResponse.json(
-      { error: "xPct and yPct must be numbers between 0 and 100" },
-      { status: 400 }
-    );
-  }
-
   const db = getSupabaseAdmin();
 
   // Verify session exists
@@ -139,7 +118,9 @@ export async function POST(
       actorName: voterName.trim(),
       message: `${voterName.trim()} commented in "${sessionForNotif.title}"`,
       link: `/explorations/${sessionId}/options/${optionId}`,
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[Notification Error] Failed to create comment notification:', err);
+    });
   }
 
   return NextResponse.json({ comment });

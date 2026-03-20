@@ -72,7 +72,9 @@ export async function POST(request: Request) {
     sessionTitle: title.trim(),
     message: `New session "${title.trim()}" was created`,
     link: `/explorations/${session.id}`,
-  }).catch(() => {});
+  }).catch((err) => {
+    console.error('[Notification Error] Failed to create session notification:', err);
+  });
 
   return NextResponse.json({ id: session.id, creatorToken });
 }

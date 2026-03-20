@@ -105,7 +105,9 @@ export async function POST(
       actorName: voterName.trim(),
       message: `${voterName.trim()} voted in "${sessionForNotif.title}"`,
       link: `/explorations/${sessionId}/options/${optionId}`,
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[Notification Error] Failed to create vote notification:', err);
+    });
   }
 
   // Check if we should auto-reveal

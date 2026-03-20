@@ -309,9 +309,34 @@ export function validateCommentInput(body: unknown): ValidationResult {
   const b = body as Record<string, unknown>;
   const errors: Record<string, string> = {};
 
-  // text: required, 1-5000 chars
-  const textValidation = validateString(b.text, "text", 1, 5000);
-  if (!textValidation.valid) errors.text = textValidation.error!;
+  // optionId: required, must be UUID
+  if (typeof b.optionId !== "string" || !isValidUUID(b.optionId)) {
+    errors.optionId = "optionId must be a valid UUID";
+  }
+
+  // voterId: required, must be UUID
+  if (typeof b.voterId !== "string" || !isValidUUID(b.voterId)) {
+    errors.voterId = "voterId must be a valid UUID";
+  }
+
+  // voterName: required, non-empty string
+  if (typeof b.voterName !== "string" || !b.voterName.trim()) {
+    errors.voterName = "voterName is required";
+  }
+
+  // body/commentBody: required, 1-280 chars
+  const commentValidation = validateString(b.body, "body", 1, 280);
+  if (!commentValidation.valid) errors.body = commentValidation.error!;
+
+  // xPct: required, number 0-100
+  if (typeof b.xPct !== "number" || b.xPct < 0 || b.xPct > 100) {
+    errors.xPct = "xPct must be a number between 0 and 100";
+  }
+
+  // yPct: required, number 0-100
+  if (typeof b.yPct !== "number" || b.yPct < 0 || b.yPct > 100) {
+    errors.yPct = "yPct must be a number between 0 and 100";
+  }
 
   return Object.keys(errors).length > 0
     ? { valid: false, errors }
