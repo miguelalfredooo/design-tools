@@ -72,6 +72,15 @@ export default function NewSessionPage() {
     setOptions((prev) => prev.filter((o) => o.key !== key));
   }
 
+  function loadRaptiveTemplate() {
+    setTitle("Raptive Creator Engagement");
+    setDescription("Give creators visibility and control to drive consistent posting and community growth");
+    setProblem("Creators are underengaged — no visibility into what's working, no tools to maintain presence efficiently. Reader retention and pageview revenue suffer when creators go silent.");
+    setGoal("Give creators visibility and control so the community becomes a place they're invested in — driving consistent posting, meaningful engagement, and measurable pageview lift.");
+    setAudience("Content creators on Raptive Community + their team members who manage presence on their behalf");
+    setConstraints("Legal review needed for behavioral data · Authenticity attribution non-negotiable · No advertiser conflicts · Conservative prompt defaults · 6–8 creator interviews required before sprint");
+  }
+
   function updateOption(key: string, field: keyof OptionDraft, value: string) {
     setOptions((prev) =>
       prev.map((o) => (o.key === key ? { ...o, [field]: value } : o))
@@ -125,6 +134,9 @@ export default function NewSessionPage() {
             <ArrowLeft className="size-4" />
             Home
           </Link>
+        </Button>
+        <Button variant="outline" size="sm" onClick={loadRaptiveTemplate}>
+          Load Raptive Template
         </Button>
       </div>
 
