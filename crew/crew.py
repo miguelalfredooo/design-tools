@@ -106,25 +106,14 @@ def run_crew(
         "full_output": str(result)
     }
 
-    # Parse individual task outputs if available
-    task_outputs = getattr(result, "task_outputs", [])
-    for i, task_output in enumerate(task_outputs):
-        output_text = str(task_output)
-        if i == 0 and tasks[0].description.startswith("Frame"):
-            output["pm_frame"] = output_text
-        elif i < len(tasks) - 1 or tasks[i].description.find("Synthesize") != -1:
-            output["research_synthesis"] = output_text
-        elif "recommend" in tasks[i].description.lower():
-            output["design_recommendation"] = output_text
+    # Extract crew result as string
+    result_str = str(result) if result else ""
 
-    # Fallback: if task parsing fails, use full output
-    if not output["pm_frame"] and not output["research_synthesis"]:
-        # Split output by agent role mentions
-        full = str(result)
-        output["pm_frame"] = full
-        output["research_synthesis"] = full
-        if stage != "discovery":
-            output["design_recommendation"] = full
+    # For now, use the full crew output for both pm_frame and research_synthesis
+    # The crew produces a complete synthesis that includes both strategic framing and evidence
+    # The frontend will display both cards with this content
+    output["pm_frame"] = result_str
+    output["research_synthesis"] = result_str
 
     return output
 
