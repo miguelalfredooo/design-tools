@@ -28,7 +28,7 @@ export default function CrewTestPage() {
           metric,
           user_segment: userSegment,
           stage: "discovery",
-          synthesis_tier: "quick",
+          synthesis_tier: "test",
         }),
       });
 

@@ -69,12 +69,13 @@ export function DesignOpsClient() {
       <div className="space-y-6">
         {/* Title & Description */}
         <div className="space-y-3">
-          <CarrierInput
+          <CarrierTextarea
             placeholder="Session title..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             designSize="lg"
             className="font-bold tracking-tight"
+            rows={2}
           />
           <CarrierTextarea
             placeholder="Brief description for voters..."

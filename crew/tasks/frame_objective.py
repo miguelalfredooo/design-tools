@@ -11,7 +11,19 @@ def create_frame_objective_task(agent: Agent, context: dict) -> Task:
     constraints = context.get("constraints", {})
     user_segment = context.get("user_segment", "")
 
-    description = f"""You are a Product Manager. Your job: frame this problem and surface what we don't know.
+    if context.get("synthesis_tier") == "test":
+        description = f"""PM test mode. Absolute minimum.
+
+Problem: {problem}
+Metric: {metric}
+
+Output TWO things only:
+1. Frame (one sentence)
+2. Top assumption (one sentence)
+
+No essay."""
+    else:
+        description = f"""You are a Product Manager. Your job: frame this problem and surface what we don't know.
 
 **Input:**
 Problem: {problem}
