@@ -1,29 +1,40 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Play, AlertTriangle } from "lucide-react";
+import { Loader2, Play, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CarrierTextarea } from "@/components/ui/carrier-textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import type { Objective, AgentMessage, CrewHealthStatus } from "@/lib/design-ops-types";
+import type { Objective, AgentMessage, CrewHealthStatus, DesignOutput } from "@/lib/design-ops-types";
 
 interface DesignOpsCrewRunnerProps {
   objectives: Objective[];
   onMessages: (messages: AgentMessage[]) => void;
   onRunStatusChange: (running: boolean) => void;
+  iteration?: number;
+  previousDesignOutput?: DesignOutput | null;
+  onIterationComplete?: () => void;
+  problemStatement?: string;
+  userSegment?: string;
+  metric?: string;
+  constraints?: string;
 }
 
 export function DesignOpsCrewRunner({
   objectives,
   onMessages,
   onRunStatusChange,
+  iteration = 1,
+  previousDesignOutput,
+  onIterationComplete,
+  problemStatement = "",
+  userSegment = "",
+  metric = "",
+  constraints = "",
 }: DesignOpsCrewRunnerProps) {
   const [prompt, setPrompt] = useState("");
-  const [selectedObjectiveIds, setSelectedObjectiveIds] = useState<Set<string>>(
-    new Set(objectives.map((o) => o.id))
-  );
   const [running, setRunning] = useState(false);
   const [synthesisT, setSynthesisTier] = useState<"quick" | "balanced" | "in-depth">("balanced");
   const [health, setHealth] = useState<CrewHealthStatus | null>(null);
@@ -38,30 +49,11 @@ export function DesignOpsCrewRunner({
       );
   }, []);
 
-  // Sync selected objectives when new ones are added
-  useEffect(() => {
-    setSelectedObjectiveIds(new Set(objectives.map((o) => o.id)));
-  }, [objectives]);
-
-  const toggleObjective = (id: string) => {
-    setSelectedObjectiveIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   const handleRun = useCallback(async () => {
     if (!prompt.trim()) {
       toast.error("Enter a focus prompt for Oracle");
       return;
     }
-
-    const selected = objectives.filter((o) => selectedObjectiveIds.has(o.id));
 
     setRunning(true);
     onRunStatusChange(true);
@@ -72,9 +64,14 @@ export function DesignOpsCrewRunner({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          problem_statement: prompt.trim(),
+          prompt: prompt.trim(),
           synthesis_tier: synthesisT,
-          constraints: selected.map(o => `${o.title}: ${o.metric} → ${o.target}`),
+          problem_statement: problemStatement || prompt.trim(),
+          user_segment: userSegment,
+          metric: metric,
+          constraints: constraints ? [constraints] : [],
+          previous_design_output: previousDesignOutput || null,
+          iteration: iteration,
         }),
       });
 
@@ -128,6 +125,7 @@ export function DesignOpsCrewRunner({
       }
 
       toast.success("Crew synthesis complete");
+      onIterationComplete?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Crew run failed";
       toast.error(message);
@@ -135,7 +133,7 @@ export function DesignOpsCrewRunner({
       setRunning(false);
       onRunStatusChange(false);
     }
-  }, [prompt, synthesisT, objectives, selectedObjectiveIds, onMessages, onRunStatusChange]);
+  }, [prompt, synthesisT, onMessages, onRunStatusChange, iteration, previousDesignOutput, onIterationComplete]);
 
   const crewUnavailable = health?.status === "unavailable";
   const ollamaUnavailable = health?.ollama === "unavailable";
@@ -203,32 +201,6 @@ export function DesignOpsCrewRunner({
         />
       </div>
 
-      {/* Objective selection */}
-      {objectives.length > 0 && (
-        <div>
-          <label className="text-sm font-medium mb-1.5 block">Evaluate against</label>
-          <div className="space-y-1.5">
-            {objectives.map((obj) => (
-              <label
-                key={obj.id}
-                className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedObjectiveIds.has(obj.id)}
-                  onChange={() => toggleObjective(obj.id)}
-                  disabled={running}
-                  className="rounded"
-                />
-                <span className={selectedObjectiveIds.has(obj.id) ? "text-foreground" : "text-muted-foreground"}>
-                  {obj.title}: {obj.metric} → {obj.target}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Run button */}
       <Button
         onClick={handleRun}
@@ -247,6 +219,18 @@ export function DesignOpsCrewRunner({
           </>
         )}
       </Button>
+
+      {/* Iterate button */}
+      {previousDesignOutput && !running && (
+        <Button
+          onClick={handleRun}
+          variant="outline"
+          className="w-full"
+        >
+          <RefreshCw className="size-4 mr-2" />
+          Iterate (Round {iteration})
+        </Button>
+      )}
     </div>
   );
 }

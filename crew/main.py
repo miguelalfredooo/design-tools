@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 import os
 import uuid
@@ -46,6 +47,8 @@ async def run_crew(request: Request):
     metric = body.get("metric")
     constraints = body.get("constraints")
     research_data = body.get("research_data", {})
+    previous_design_output = body.get("previous_design_output")
+    iteration = body.get("iteration", 1)
 
     # Validate: at least one framing input
     if not any([problem_statement, objective, hypothesis]):
@@ -75,19 +78,21 @@ async def run_crew(request: Request):
                 from crew import run_crew as _run_crew
 
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None,
+            crew_runner = functools.partial(
                 _run_crew,
-                stage,
-                synthesis_tier,
-                problem_statement,
-                objective,
-                hypothesis,
-                user_segment,
-                metric,
-                constraints,
-                research_data,
+                stage=stage,
+                synthesis_tier=synthesis_tier,
+                problem_statement=problem_statement,
+                objective=objective,
+                hypothesis=hypothesis,
+                user_segment=user_segment,
+                metric=metric,
+                constraints=constraints,
+                research_data=research_data,
+                previous_design_output=previous_design_output,
+                iteration=iteration,
             )
+            result = await loop.run_in_executor(None, crew_runner)
 
             # Extract individual outputs
             pm_output = result.get("pm_frame")
@@ -107,6 +112,7 @@ async def run_crew(request: Request):
                     "confidence": "n/a",
                     "body": json.dumps(pm_output) if isinstance(pm_output, dict) else pm_output,
                     "timestamp": datetime.now().isoformat(),
+                    "iteration": iteration,
                 }),
             }
 
@@ -134,6 +140,7 @@ async def run_crew(request: Request):
                         "confidence": "medium",
                         "body": json.dumps(research_output) if isinstance(research_output, dict) else research_output,
                         "timestamp": datetime.now().isoformat(),
+                        "iteration": iteration,
                     }),
                 }
                 yield {
@@ -157,6 +164,7 @@ async def run_crew(request: Request):
                         "confidence": "medium",
                         "body": json.dumps(research_output) if isinstance(research_output, dict) else research_output,
                         "timestamp": datetime.now().isoformat(),
+                        "iteration": iteration,
                     }),
                 }
 
@@ -172,6 +180,7 @@ async def run_crew(request: Request):
                         "confidence": "medium",
                         "body": json.dumps(design_output) if isinstance(design_output, dict) else design_output,
                         "timestamp": datetime.now().isoformat(),
+                        "iteration": iteration,
                     }),
                 }
 

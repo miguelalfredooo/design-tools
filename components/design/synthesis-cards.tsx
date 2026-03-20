@@ -21,11 +21,11 @@ function ConfidenceIcon({
 }) {
   switch (level) {
     case "high":
-      return <Check className="size-3.5 text-green-500" />;
+      return <Check className="size-3.5 text-green-900 dark:text-green-200" />;
     case "medium":
-      return <AlertCircle className="size-3.5 text-amber-500" />;
+      return <AlertCircle className="size-3.5 text-amber-900 dark:text-amber-200" />;
     case "low":
-      return <HelpCircle className="size-3.5 text-red-500" />;
+      return <HelpCircle className="size-3.5 text-red-900 dark:text-red-200" />;
     case "n/a":
       return <MoreHorizontal className="size-3.5 text-muted-foreground" />;
   }
@@ -37,11 +37,11 @@ function getAgentColor(
 ) {
   switch (from) {
     case "research_insights":
-      return "bg-blue-500/10 border-blue-500/20 text-blue-400";
+      return "bg-blue-500/10 border-blue-500/20 text-blue-900 dark:text-blue-200";
     case "product_designer":
-      return "bg-purple-500/10 border-purple-500/20 text-purple-400";
+      return "bg-purple-500/10 border-purple-500/20 text-purple-900 dark:text-purple-200";
     case "product_manager":
-      return "bg-amber-500/10 border-amber-500/20 text-amber-400";
+      return "bg-amber-500/10 border-amber-500/20 text-amber-900 dark:text-amber-200";
   }
 }
 

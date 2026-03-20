@@ -33,6 +33,8 @@ def run_crew(
     metric: Optional[str] = None,
     constraints: Optional[dict] = None,
     research_data: Optional[dict] = None,
+    previous_design_output: Optional[dict] = None,
+    iteration: int = 1,
 ) -> dict:
     """
     Run three-agent handoff: PM → Research → Designer.
@@ -56,6 +58,8 @@ def run_crew(
         "metric": metric,
         "constraints": constraints or {},
         "research_data": research_data or {},
+        "previous_design_output": previous_design_output or {},
+        "iteration": iteration,
     }
 
     # STEP 1: PM frames and surfaces assumptions

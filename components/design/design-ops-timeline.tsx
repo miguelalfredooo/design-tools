@@ -16,6 +16,14 @@ function parseQuickOutput(
   try {
     const data = JSON.parse(body);
 
+    // PM output failures
+    if (data.status === "fail" || data.gaps) {
+      return {
+        headline: "⚠️ Frame validation failed",
+        keyPoints: data.gaps?.slice(0, 3) || [],
+      };
+    }
+
     // PM output: strategic_frame.problem, assumptions
     if (data.strategic_frame) {
       return {
@@ -63,7 +71,16 @@ function parseBalancedOutput(body: string): {
   try {
     const data = JSON.parse(body);
 
-    // PM output
+    // PM output (including failures)
+    if (data.status === "fail" || data.gaps) {
+      return {
+        finding: "⚠️ Frame validation failed",
+        evidence: data.gaps?.slice(0, 3) || [],
+        nextSteps: "Refine the problem statement with more specificity",
+      };
+    }
+
+    // PM output (successful)
     if (data.strategic_frame) {
       return {
         finding: data.strategic_frame.problem || "",
@@ -114,7 +131,18 @@ function parseInDepthOutput(body: string): {
   try {
     const data = JSON.parse(body);
 
-    // PM output
+    // PM output failures
+    if (data.status === "fail" || data.gaps) {
+      return {
+        finding: "⚠️ Frame validation failed",
+        evidence: data.gaps?.slice(0, 4) || [],
+        assumptions: "Refine the problem statement with more specificity",
+        nextSteps: "Address all gaps before proceeding",
+        missingContext: data.gaps?.join("; ") || "",
+      };
+    }
+
+    // PM output (successful)
     if (data.strategic_frame) {
       return {
         finding: data.strategic_frame.problem || "",
@@ -185,48 +213,86 @@ export function DesignOpsTimeline({ messages }: DesignOpsTimelineProps) {
     );
   }
 
+  // Group messages by iteration
+  const messagesByIteration = new Map<number, typeof messages>();
+  for (const msg of messages) {
+    const iter = msg.iteration ?? 1;
+    if (!messagesByIteration.has(iter)) {
+      messagesByIteration.set(iter, []);
+    }
+    messagesByIteration.get(iter)!.push(msg);
+  }
+
+  const iterations = Array.from(messagesByIteration.keys()).sort((a, b) => a - b);
+
   return (
     <div className="space-y-4">
-      {messages.map((msg, i) => {
-        const isLast = i === messages.length - 1;
-
-        // Common props for all card types
-        const commonProps = {
-          from: msg.from as "research_insights" | "product_designer" | "product_manager",
-          fromName: msg.fromName || "",
-          subject: msg.subject,
-          confidence: msg.confidence as "high" | "medium" | "low" | "n/a",
-          timestamp: msg.timestamp,
-          isLast,
-        };
-
-        // Determine tier (default to balanced if not set)
-        const tier = msg.tier || "balanced";
+      {iterations.map((iter, iterIndex) => {
+        const iterMessages = messagesByIteration.get(iter)!;
+        const showIterDivider = iterIndex > 0;
 
         return (
-          <div key={i} className="relative">
-            {!isLast && <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />}
-
-            {/* Route to correct card component based on tier */}
-            {tier === "quick" ? (
-              <SynthesisCardQuick
-                {...commonProps}
-                tier="quick"
-                {...parseQuickOutput(msg.body || "")}
-              />
-            ) : tier === "in-depth" ? (
-              <SynthesisCardInDepth
-                {...commonProps}
-                tier="in-depth"
-                {...parseInDepthOutput(msg.body || "")}
-              />
-            ) : (
-              <SynthesisCardBalanced
-                {...commonProps}
-                tier="balanced"
-                {...parseBalancedOutput(msg.body || "")}
-              />
+          <div key={iter}>
+            {/* Iteration divider */}
+            {showIterDivider && (
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Iteration {iter}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
             )}
+
+            {/* Messages for this iteration */}
+            <div className="space-y-4">
+              {iterMessages.map((msg, i) => {
+                const isLastInIteration = i === iterMessages.length - 1;
+                const isLastOverall = iter === iterations[iterations.length - 1] && isLastInIteration;
+
+                // Common props for all card types
+                const commonProps = {
+                  from: msg.from as "research_insights" | "product_designer" | "product_manager",
+                  fromName: msg.fromName || "",
+                  subject: msg.subject,
+                  confidence: msg.confidence as "high" | "medium" | "low" | "n/a",
+                  timestamp: msg.timestamp,
+                  isLast: isLastOverall,
+                };
+
+                // Determine tier (default to balanced if not set)
+                const tier = msg.tier || "balanced";
+
+                return (
+                  <div key={`${iter}-${i}`} className="relative">
+                    {!(isLastInIteration && iterIndex === iterations.length - 1) && (
+                      <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />
+                    )}
+
+                    {/* Route to correct card component based on tier */}
+                    {tier === "quick" ? (
+                      <SynthesisCardQuick
+                        {...commonProps}
+                        tier="quick"
+                        {...parseQuickOutput(msg.body || "")}
+                      />
+                    ) : tier === "in-depth" ? (
+                      <SynthesisCardInDepth
+                        {...commonProps}
+                        tier="in-depth"
+                        {...parseInDepthOutput(msg.body || "")}
+                      />
+                    ) : (
+                      <SynthesisCardBalanced
+                        {...commonProps}
+                        tier="balanced"
+                        {...parseBalancedOutput(msg.body || "")}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         );
       })}

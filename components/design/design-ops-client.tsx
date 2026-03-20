@@ -8,7 +8,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { cn } from "@/lib/utils";
 import { CarrierInput } from "@/components/ui/carrier-input";
 import { CarrierTextarea } from "@/components/ui/carrier-textarea";
-import type { Objective, AgentMessage } from "@/lib/design-ops-types";
+import type { Objective, AgentMessage, DesignOutput } from "@/lib/design-ops-types";
 
 export function DesignOpsClient() {
   const { isAdmin } = useAdmin();
@@ -23,7 +23,10 @@ export function DesignOpsClient() {
   const [problem, setProblem] = useState("");
   const [goal, setGoal] = useState("");
   const [audience, setAudience] = useState("");
+  const [metric, setMetric] = useState("");
   const [constraints, setConstraints] = useState("");
+  const [iteration, setIteration] = useState(1);
+  const [lastDesignOutput, setLastDesignOutput] = useState<DesignOutput | null>(null);
 
   useEffect(() => {
     fetch("/api/design-ops/objectives")
@@ -34,6 +37,28 @@ export function DesignOpsClient() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  // Extract designer output whenever messages update
+  useEffect(() => {
+    const designerMsg = [...messages].reverse().find(m => m.from === "product_designer");
+    if (designerMsg?.body) {
+      try {
+        setLastDesignOutput(JSON.parse(designerMsg.body));
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, [messages]);
+
+  const populateSampleData = () => {
+    setTitle("Raptive Creator Engagement");
+    setDescription("Testing the iteration loop with creator engagement problem space");
+    setProblem("Creators are underengaged — no visibility into what's working, no tools to maintain presence efficiently.");
+    setGoal("Increase consistent posting frequency, boost engagement metrics, and grow pageviews among our creator community.");
+    setAudience("Mid-tier content creators (10k-100k followers) on Raptive Community Platform who rely on consistent presence");
+    setMetric("Posting frequency (posts/week), engagement rate (comments + shares), pageview growth month-over-month");
+    setConstraints("Must integrate with existing Raptive dashboard, no external tool dependencies, launch within Q2.");
+  };
 
   if (!isAdmin) {
     return (
@@ -58,11 +83,19 @@ export function DesignOpsClient() {
   return (
     <div className="p-6 space-y-6 max-w-4xl">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black tracking-tight">Design Ops</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          AI-powered research synthesis tied to your business objectives.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">Design Ops</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            AI-powered research synthesis tied to your business objectives.
+          </p>
+        </div>
+        <button
+          onClick={populateSampleData}
+          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-muted"
+        >
+          Populate sample
+        </button>
       </div>
 
       {/* Setup Form - Carrier /new aesthetic */}
@@ -127,17 +160,29 @@ export function DesignOpsClient() {
                 </div>
               </div>
 
-              {/* Audience / Constraints */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1.5">
-                  <div className="text-sm font-semibold text-foreground">Audience</div>
-                  <CarrierTextarea
-                    placeholder="Who is this for?"
-                    value={audience}
-                    onChange={(e) => setAudience(e.target.value)}
-                    designSize="sm"
-                    rows={3}
-                  />
+              {/* Audience / Metric / Constraints */}
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <div className="text-sm font-semibold text-foreground">Audience</div>
+                    <CarrierTextarea
+                      placeholder="Who is this for?"
+                      value={audience}
+                      onChange={(e) => setAudience(e.target.value)}
+                      designSize="sm"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="text-sm font-semibold text-foreground">Metric</div>
+                    <CarrierTextarea
+                      placeholder="How do we measure success?"
+                      value={metric}
+                      onChange={(e) => setMetric(e.target.value)}
+                      designSize="sm"
+                      rows={3}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Constraints</div>
@@ -173,6 +218,13 @@ export function DesignOpsClient() {
           objectives={objectives}
           onMessages={setMessages}
           onRunStatusChange={setRunning}
+          iteration={iteration}
+          previousDesignOutput={lastDesignOutput}
+          onIterationComplete={() => setIteration(prev => prev + 1)}
+          problemStatement={problem}
+          userSegment={audience}
+          metric={metric}
+          constraints={constraints}
         />
 
         {(messages.length > 0 || running) && (
