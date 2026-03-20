@@ -111,7 +111,7 @@ export function DesignOpsClient() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             designSize="lg"
-            className="font-bold tracking-tight"
+            className="text-xl font-bold tracking-tight"
           />
           <Textarea
             placeholder="Brief description for voters..."
