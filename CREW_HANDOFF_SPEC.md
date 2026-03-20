@@ -3,6 +3,8 @@
 > Each agent answers the previous agent's unresolved question.
 > **PM surfaces risk → Research pressure-tests it → Designer validates the highest-risk assumption first.**
 
+**For detailed agent personas & system prompts, see [crew/AGENTS.md](./crew/AGENTS.md)**
+
 ---
 
 ## How the Loop Works
@@ -236,6 +238,166 @@ Before proposing anything:
 ### Contract
 
 Team reads this closing line and debates the trade-off. When someone says "I disagree," the Designer can point to the trade-off and ask: "Are you willing to make that trade?"
+
+---
+
+## Lifecycle Stages & Synthesis Tiers
+
+### Product Lifecycle Stages
+
+The crew adapts its analysis based on where the product is in its development:
+
+| Stage | Definition | PM Does | Research Does | Designer Does |
+|-------|-----------|---------|---------------|---------------|
+| **discovery** | "We don't know if this is real" | Frames the open question | Proposes how to answer it | Sits out (focus on understanding) |
+| **validation** | "We think this is real, testing if..." | Frames the hypothesis | Synthesizes data for/against | Evaluates feasibility |
+| **solution** | "This is real, designing the best way" | Frames the objective | Synthesizes all data | Recommends design direction |
+| **optimization** | "It works, making it better" | Frames the lever | Synthesizes what could improve | Recommends optimization |
+
+**How to use:** Pass `stage` param to crew. Agents tailor depth to the stage (e.g., Designer produces provocations in discovery, polished specs in solution).
+
+### Synthesis Tiers
+
+The `synthesis_tier` parameter controls output depth. All tiers analyze the same data—tier only affects narrative structure.
+
+| Tier | Output Style | Use Case | Speed | When to use |
+|------|--------------|----------|-------|------------|
+| **quick** ⚡ | Snappy, 2-3 patterns, bullets | Fast feedback loops, gut-checking | Fastest | Early morning sync, quick validation |
+| **balanced** ⚙️ | Structured synthesis, findings + evidence + next steps | Standard analysis, most runs | Standard | Default, most use cases |
+| **in-depth** 🔬 | Thorough, competing interpretations, detailed reasoning | Foundational decisions, contradictions | Slightly slower | Major roadmap decisions, conflicts |
+
+**Key principle:** All tiers use the same agents and data. Tier only affects how much detail and reasoning the agent shows. Quick is snappier, in-depth shows more deliberation.
+
+**Example:** All tiers find that "users struggle with role selection" but:
+- Quick: "Role selection is a blocker. Consider auto-detection."
+- Balanced: "Role selection causes 40% abandonment. Auto-detection from email would eliminate blocker but add 15% false positives. Test first."
+- In-depth: "Role selection causes abandonment. Root cause: [A], [B], [C]. Auto-detection works IF [X], [Y], [Z]. Alternatives considered: [1], [2]. Test plan: [...]."
+
+---
+
+## Execution Flow
+
+```
+POST /design-ops/run {
+  stage: "discovery|validation|solution|optimization",
+  synthesis_tier: "quick|balanced|in-depth",
+  problem_statement: "...",
+  metric: "...",
+  research_data: {...},
+  ...
+}
+    │
+    ├── SSE: run_start (includes synthesis_tier)
+    │
+    ├── SSE: agent_start (pm)
+    │   ├── PM AGENT
+    │   │   ├─ Input: problem_statement, objective, metric, constraints, stage
+    │   │   ├─ Output: strategic_frame + assumptions (tier-agnostic)
+    │   │   └─ Gate: If status="fail", crew stops here
+    │   │
+    │   ├── SSE: agent_message (PM output)
+    │
+    ├── SSE: agent_start (research)
+    │   ├── RESEARCH & INSIGHTS AGENT (TIER-AWARE)
+    │   │   ├─ Input: PM frame + research_data + synthesis_tier + stage
+    │   │   ├─ Quick: 2-3 key patterns (bullets, minimal reasoning)
+    │   │   ├─ Balanced: structured synthesis (findings + confidence + next steps)
+    │   │   └─ In-depth: all patterns + competing interpretations + detailed assumptions
+    │   │   └─ Output: what_we_know + assumption_status + highest_risk_assumption
+    │   │   └─ Gate: If highest_risk_assumption is empty, crew stops here
+    │   │
+    │   ├── SSE: agent_message (Research output)
+    │
+    ├── SSE: agent_start (design)
+    │   ├── DESIGNER AGENT (if stage != discovery, TIER-AWARE)
+    │   │   ├─ Input: research synthesis + constraints + synthesis_tier + stage
+    │   │   ├─ Quick: direction + 2 key trade-offs only
+    │   │   ├─ Balanced: direction + interactions + trade-offs + feasibility
+    │   │   └─ In-depth: full recommendation + alternatives considered + risks + mitigations
+    │   │   └─ Output: ideas (2-3) + objective + critique_anchor
+    │   │
+    │   ├── SSE: agent_message (Design output)
+    │
+    └── SSE: run_complete
+```
+
+**Sequential execution:** PM → Research → Designer (no parallel, handoff-driven)
+**Streaming:** Each agent message sent via SSE as it completes
+**Tier adaptation:** Research & Designer adapt output structure based on tier
+
+---
+
+## Data Sources & Tools
+
+### Research Agent Can Access (Read-Only)
+
+Via Supabase tool:
+- `research_observations` — Tagged observations (area, body, contributor)
+- `voting_sessions` — Design sessions (title, problem, goal, user segment)
+- `voting_options` — Design options within sessions
+- `voting_votes` — Votes per option with voter names
+- `design_comments` — Spatial/inline comments on sessions
+
+### User Provides
+
+Via `research_data` input:
+- **Snowflake results** — SQL query outputs (funnel drop-off, cohort analysis, etc.)
+- **Survey responses** — Qualitative feedback, open-ended responses
+- **Prototype tests** — Test results, prototype references, votes
+- **Images/Mockups** — Design references from Figma or Excalidraw
+
+**Graceful degradation:** If no external data provided, Research works from Supabase observations alone. Output is labeled "Assumed" rather than "Known," but crew still moves forward.
+
+---
+
+## Service Entry Points
+
+| File | Purpose |
+|------|---------|
+| `crew/main.py` | FastAPI server — `/design-ops/run` (SSE) and `/health` endpoints |
+| `crew/crew.py` | `run_crew(...)` — Three-agent orchestration (flexible API) |
+| `crew/agents/pm.py` | PM Agent definition + system prompt |
+| `crew/agents/research_insights.py` | Research Agent definition + system prompt |
+| `crew/agents/product_design.py` | Designer Agent definition + system prompt |
+| `crew/tasks/*.py` | Task definitions (what each agent does) |
+| `crew/tools/supabase_tool.py` | Fetch evidence from Supabase |
+| `crew/schemas.py` | Output validation (ensure consistent JSON) |
+
+**Health check:**
+```
+GET /health
+→ { "status": "ok", "anthropic": "ok", "model": "claude-haiku-4-5-20251001" }
+```
+
+---
+
+## Integration with Carrier UI
+
+The Next.js frontend calls the crew at different workflow points:
+
+1. **Discovery phase** — User provides problem + data → `/design-ops/run` with `stage=discovery` → UI shows findings
+2. **Validation phase** — User tests hypothesis → `/design-ops/run` with `stage=validation` → UI shows confidence level
+3. **Solution phase** — User has validated hypothesis → `/design-ops/run` with `stage=solution` → UI shows design recommendation
+4. **Optimization phase** — User wants to improve → `/design-ops/run` with `stage=optimization` → UI shows lever + impact estimate
+
+**UI components:**
+- `design-ops-crew-runner` — SSE subscription, tier selector, run trigger
+- `design-ops-timeline` — Message timeline, agent output streaming
+- `synthesis-cards/*` — Tier-specific card renderers (Quick/Balanced/In-Depth)
+
+---
+
+## Design Principles Guiding the Crew
+
+**Modular & flexible** — Any combination of inputs works. Always produce output.
+
+**Evidence-grounded** — All findings reference actual data. Assumptions labeled explicitly.
+
+**Progressive disclosure** — Headline first (what matters), details available on demand.
+
+**Forward momentum** — Never block on missing data. Always suggest next step.
+
+**Three-discipline collaboration** — PM owns viability, Research owns evidence, Design owns desirability.
 
 ---
 
