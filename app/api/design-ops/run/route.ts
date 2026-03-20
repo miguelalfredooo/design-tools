@@ -4,7 +4,7 @@ const CREW_API_URL = process.env.CREW_API_URL || "http://localhost:8000";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { prompt, objectives, synthesis_tier } = body;
+  const { prompt, synthesis_tier, problem_statement, user_segment, metric, constraints, previous_design_output, iteration } = body;
 
   if (!prompt) {
     return NextResponse.json(
@@ -18,9 +18,14 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        problem_statement: prompt,
+        problem_statement: problem_statement || prompt,
+        user_segment: user_segment || "",
+        metric: metric || "",
         synthesis_tier: synthesis_tier || "balanced",
-        stage: "discovery"
+        stage: "discovery",
+        constraints: constraints || [],
+        previous_design_output: previous_design_output || null,
+        iteration: iteration || 1,
       }),
     });
 

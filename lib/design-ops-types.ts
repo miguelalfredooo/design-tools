@@ -19,6 +19,24 @@ export interface AgentMessage {
   nextStep: string;
   timestamp: string;
   tier?: "quick" | "balanced" | "in-depth";
+  iteration?: number;
+}
+
+export interface DesignOutput {
+  objective: string;
+  ideas: {
+    specific_change: string;
+    why: string;
+    assumption_tested: string;
+    tradeoff: string;
+    second_order_effect: string;
+    feasibility: string;
+    validation: string;
+  }[];
+  critique_anchor: {
+    alternative: string;
+    tradeoff: string;
+  };
 }
 
 export interface CrewRun {

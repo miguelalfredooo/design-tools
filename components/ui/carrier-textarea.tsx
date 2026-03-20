@@ -18,19 +18,19 @@ const CarrierTextarea = React.forwardRef<
     lg: "text-lg",
   };
 
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
     textarea.style.height = "auto";
     textarea.style.height = `${textarea.scrollHeight}px`;
 
     // Call the original onChange if provided
-    props.onChange?.(e as React.ChangeEvent<HTMLTextAreaElement>);
+    props.onChange?.(e);
   };
 
   return (
     <textarea
       ref={ref}
-      onInput={handleInput}
+      onChange={handleChange}
       style={{ wordWrap: "break-word", ...((props as any).style || {}) }}
       className={cn(
         "w-full bg-transparent outline-none px-0 resize-none overflow-hidden scrollbar-hide",

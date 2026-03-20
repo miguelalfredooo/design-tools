@@ -8,40 +8,59 @@ import {
 } from "@/components/design/synthesis-cards";
 
 // Parser functions for tier-specific crew output formats
-function parseQuickOutput(body: string): { headline: string; keyPoints: string[] } {
-  const lines = body.split("\n").filter((l) => l.trim());
+// All body fields are JSON strings that need parsing
 
-  // Look for HEADLINE or KEY PATTERNS sections
-  let headline = "";
-  const keyPoints: string[] = [];
+function parseQuickOutput(
+  body: string
+): { headline: string; keyPoints: string[] } {
+  try {
+    const data = JSON.parse(body);
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.includes("HEADLINE:")) {
-      headline = line.replace("HEADLINE:", "").trim();
-    } else if (line.includes("KEY PATTERNS:")) {
-      // Collect bullet points until next section
-      for (let j = i + 1; j < lines.length; j++) {
-        if (lines[j].includes(":") && !lines[j].startsWith("-") && !lines[j].startsWith("•")) {
-          break;
-        }
-        const clean = lines[j].replace(/^[-•]\s*/, "").trim();
-        if (clean) keyPoints.push(clean);
-      }
-      break;
+    // PM output failures
+    if (data.status === "fail" || data.gaps) {
+      return {
+        headline: "⚠️ Frame validation failed",
+        keyPoints: data.gaps?.slice(0, 3) || [],
+      };
     }
-  }
 
-  // Fallback: first line as headline, next 3 as key points
-  if (!headline) {
-    headline = lines[0] || "";
-    keyPoints.push(...lines.slice(1, 4));
-  }
+    // PM output: strategic_frame.problem, assumptions
+    if (data.strategic_frame) {
+      return {
+        headline: data.strategic_frame.problem || "",
+        keyPoints: data.assumptions
+          ?.slice(0, 3)
+          .map((a: any) => a.statement || "")
+          .filter(Boolean) || [],
+      };
+    }
 
-  return {
-    headline,
-    keyPoints: keyPoints.slice(0, 3), // Ensure max 3
-  };
+    // Research output: what_we_know
+    if (data.what_we_know) {
+      return {
+        headline: data.highest_risk_assumption || "",
+        keyPoints: data.what_we_know
+          ?.slice(0, 3)
+          .map((item: any) => item.finding || "")
+          .filter(Boolean) || [],
+      };
+    }
+
+    // Design output: objective, ideas
+    if (data.objective) {
+      return {
+        headline: data.objective || "",
+        keyPoints: data.ideas
+          ?.slice(0, 3)
+          .map((idea: any) => idea.specific_change || "")
+          .filter(Boolean) || [],
+      };
+    }
+
+    return { headline: "", keyPoints: [] };
+  } catch {
+    return { headline: "", keyPoints: [] };
+  }
 }
 
 function parseBalancedOutput(body: string): {
@@ -49,45 +68,55 @@ function parseBalancedOutput(body: string): {
   evidence: string[];
   nextSteps: string;
 } {
-  const lines = body.split("\n").filter((l) => l.trim());
+  try {
+    const data = JSON.parse(body);
 
-  let finding = "";
-  const evidence: string[] = [];
-  let nextSteps = "";
-  let inEvidenceSection = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (line.includes("SUBJECT:")) {
-      finding = line.replace("SUBJECT:", "").trim();
-    } else if (line.includes("FINDINGS:") || line.includes("EVIDENCE:")) {
-      inEvidenceSection = true;
-    } else if (line.includes("NEXT STEPS:") || line.includes("NEXT STEP:")) {
-      inEvidenceSection = false;
-      nextSteps = line.replace(/NEXT STEPS?:/, "").trim();
-      // Collect remaining content as next steps
-      if (!nextSteps) {
-        for (let j = i + 1; j < lines.length; j++) {
-          if (!lines[j].includes(":")) {
-            nextSteps = lines[j].replace(/^[-•]\s*/, "").trim();
-            break;
-          }
-        }
-      }
-    } else if (inEvidenceSection && (line.startsWith("-") || line.startsWith("•"))) {
-      const clean = line.replace(/^[-•]\s*/, "").trim();
-      if (clean && evidence.length < 3) {
-        evidence.push(clean);
-      }
+    // PM output (including failures)
+    if (data.status === "fail" || data.gaps) {
+      return {
+        finding: "⚠️ Frame validation failed",
+        evidence: data.gaps?.slice(0, 3) || [],
+        nextSteps: "Refine the problem statement with more specificity",
+      };
     }
+
+    // PM output (successful)
+    if (data.strategic_frame) {
+      return {
+        finding: data.strategic_frame.problem || "",
+        evidence: data.constraints?.slice(0, 3) || [],
+        nextSteps: data.tradeoff || "",
+      };
+    }
+
+    // Research output
+    if (data.what_we_know) {
+      return {
+        finding: data.highest_risk_assumption || "",
+        evidence: data.what_we_know
+          ?.slice(0, 3)
+          .map((item: any) => item.finding || "")
+          .filter(Boolean) || [],
+        nextSteps: data.next_step || "",
+      };
+    }
+
+    // Design output
+    if (data.objective) {
+      return {
+        finding: data.objective || "",
+        evidence: data.ideas
+          ?.slice(0, 2)
+          .map((idea: any) => idea.specific_change || "")
+          .filter(Boolean) || [],
+        nextSteps: data.critique_anchor?.alternative || "",
+      };
+    }
+
+    return { finding: "", evidence: [], nextSteps: "" };
+  } catch {
+    return { finding: "", evidence: [], nextSteps: "" };
   }
-
-  // Fallback
-  if (!finding) finding = lines[0] || "";
-  if (!nextSteps) nextSteps = lines[lines.length - 1] || "";
-
-  return { finding, evidence, nextSteps };
 }
 
 function parseInDepthOutput(body: string): {
@@ -99,70 +128,74 @@ function parseInDepthOutput(body: string): {
   nextSteps: string;
   missingContext?: string;
 } {
-  const lines = body.split("\n").filter((l) => l.trim());
+  try {
+    const data = JSON.parse(body);
 
-  let finding = "";
-  const evidence: string[] = [];
-  let competingInterpretations = "";
-  let assumptions = "";
-  const sources: string[] = [];
-  let nextSteps = "";
-  let missingContext = "";
-
-  let currentSection = "";
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (line.includes("SUBJECT:")) {
-      finding = line.replace("SUBJECT:", "").trim();
-      currentSection = "subject";
-    } else if (line.includes("ASSUMPTIONS:")) {
-      currentSection = "assumptions";
-      assumptions = line.replace("ASSUMPTIONS:", "").trim();
-    } else if (line.includes("FINDINGS:") || line.includes("EVIDENCE:")) {
-      currentSection = "evidence";
-    } else if (line.includes("COMPETING INTERPRETATIONS:")) {
-      currentSection = "competing";
-      competingInterpretations = line.replace("COMPETING INTERPRETATIONS:", "").trim();
-    } else if (line.includes("NEXT STEPS:")) {
-      currentSection = "next";
-      nextSteps = line.replace("NEXT STEPS:", "").trim();
-    } else if (line.includes("MISSING CONTEXT:")) {
-      currentSection = "missing";
-      missingContext = line.replace("MISSING CONTEXT:", "").trim();
-    } else if (line.includes("SOURCES:")) {
-      currentSection = "sources";
-    } else if (
-      currentSection === "evidence" &&
-      (line.startsWith("-") || line.startsWith("•"))
-    ) {
-      const clean = line.replace(/^[-•]\s*/, "").trim();
-      if (clean && evidence.length < 4) {
-        evidence.push(clean);
-      }
-    } else if (
-      currentSection === "sources" &&
-      (line.startsWith("-") || line.startsWith("•"))
-    ) {
-      const clean = line.replace(/^[-•]\s*/, "").trim();
-      if (clean) sources.push(clean);
+    // PM output failures
+    if (data.status === "fail" || data.gaps) {
+      return {
+        finding: "⚠️ Frame validation failed",
+        evidence: data.gaps?.slice(0, 4) || [],
+        assumptions: "Refine the problem statement with more specificity",
+        nextSteps: "Address all gaps before proceeding",
+        missingContext: data.gaps?.join("; ") || "",
+      };
     }
+
+    // PM output (successful)
+    if (data.strategic_frame) {
+      return {
+        finding: data.strategic_frame.problem || "",
+        evidence: data.constraints?.slice(0, 4) || [],
+        assumptions: data.strategic_frame.user || "",
+        nextSteps: data.tradeoff || "",
+        missingContext: data.gaps?.join(", ") || "",
+      };
+    }
+
+    // Research output
+    if (data.what_we_know) {
+      return {
+        finding: data.highest_risk_assumption || "",
+        evidence: data.what_we_know
+          ?.slice(0, 4)
+          .map((item: any) => item.finding || "")
+          .filter(Boolean) || [],
+        assumptions:
+          data.what_we_dont_know?.[0] ||
+          data.assumption_status?.[0]?.assumption ||
+          "",
+        nextSteps: data.next_step || "",
+        sources: [],
+      };
+    }
+
+    // Design output
+    if (data.objective) {
+      return {
+        finding: data.objective || "",
+        evidence: data.ideas
+          ?.slice(0, 3)
+          .map((idea: any) => idea.specific_change || "")
+          .filter(Boolean) || [],
+        competingInterpretations: data.critique_anchor?.alternative || "",
+        assumptions: data.ideas?.[0]?.assumption_tested || "",
+        nextSteps: data.critique_anchor?.tradeoff || "",
+      };
+    }
+
+    return {
+      finding: "",
+      evidence: [],
+      nextSteps: "",
+    };
+  } catch {
+    return {
+      finding: "",
+      evidence: [],
+      nextSteps: "",
+    };
   }
-
-  // Fallback for finding
-  if (!finding) finding = lines[0] || "";
-  if (!nextSteps) nextSteps = lines[lines.length - 1] || "";
-
-  return {
-    finding,
-    evidence,
-    ...(competingInterpretations && { competingInterpretations }),
-    ...(assumptions && { assumptions }),
-    ...(sources.length > 0 && { sources }),
-    nextSteps,
-    ...(missingContext && { missingContext }),
-  };
 }
 
 interface DesignOpsTimelineProps {
@@ -180,48 +213,86 @@ export function DesignOpsTimeline({ messages }: DesignOpsTimelineProps) {
     );
   }
 
+  // Group messages by iteration
+  const messagesByIteration = new Map<number, typeof messages>();
+  for (const msg of messages) {
+    const iter = msg.iteration ?? 1;
+    if (!messagesByIteration.has(iter)) {
+      messagesByIteration.set(iter, []);
+    }
+    messagesByIteration.get(iter)!.push(msg);
+  }
+
+  const iterations = Array.from(messagesByIteration.keys()).sort((a, b) => a - b);
+
   return (
     <div className="space-y-4">
-      {messages.map((msg, i) => {
-        const isLast = i === messages.length - 1;
-
-        // Common props for all card types
-        const commonProps = {
-          from: msg.from as "research_insights" | "product_designer",
-          fromName: msg.fromName || "",
-          subject: msg.subject,
-          confidence: msg.confidence as "high" | "medium" | "low" | "n/a",
-          timestamp: msg.timestamp,
-          isLast,
-        };
-
-        // Determine tier (default to balanced if not set)
-        const tier = msg.tier || "balanced";
+      {iterations.map((iter, iterIndex) => {
+        const iterMessages = messagesByIteration.get(iter)!;
+        const showIterDivider = iterIndex > 0;
 
         return (
-          <div key={i} className="relative">
-            {!isLast && <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />}
-
-            {/* Route to correct card component based on tier */}
-            {tier === "quick" ? (
-              <SynthesisCardQuick
-                {...commonProps}
-                tier="quick"
-                {...parseQuickOutput(msg.body || "")}
-              />
-            ) : tier === "in-depth" ? (
-              <SynthesisCardInDepth
-                {...commonProps}
-                tier="in-depth"
-                {...parseInDepthOutput(msg.body || "")}
-              />
-            ) : (
-              <SynthesisCardBalanced
-                {...commonProps}
-                tier="balanced"
-                {...parseBalancedOutput(msg.body || "")}
-              />
+          <div key={iter}>
+            {/* Iteration divider */}
+            {showIterDivider && (
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Iteration {iter}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
             )}
+
+            {/* Messages for this iteration */}
+            <div className="space-y-4">
+              {iterMessages.map((msg, i) => {
+                const isLastInIteration = i === iterMessages.length - 1;
+                const isLastOverall = iter === iterations[iterations.length - 1] && isLastInIteration;
+
+                // Common props for all card types
+                const commonProps = {
+                  from: msg.from as "research_insights" | "product_designer" | "product_manager",
+                  fromName: msg.fromName || "",
+                  subject: msg.subject,
+                  confidence: msg.confidence as "high" | "medium" | "low" | "n/a",
+                  timestamp: msg.timestamp,
+                  isLast: isLastOverall,
+                };
+
+                // Determine tier (default to balanced if not set)
+                const tier = msg.tier || "balanced";
+
+                return (
+                  <div key={`${iter}-${i}`} className="relative">
+                    {!(isLastInIteration && iterIndex === iterations.length - 1) && (
+                      <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />
+                    )}
+
+                    {/* Route to correct card component based on tier */}
+                    {tier === "quick" ? (
+                      <SynthesisCardQuick
+                        {...commonProps}
+                        tier="quick"
+                        {...parseQuickOutput(msg.body || "")}
+                      />
+                    ) : tier === "in-depth" ? (
+                      <SynthesisCardInDepth
+                        {...commonProps}
+                        tier="in-depth"
+                        {...parseInDepthOutput(msg.body || "")}
+                      />
+                    ) : (
+                      <SynthesisCardBalanced
+                        {...commonProps}
+                        tier="balanced"
+                        {...parseBalancedOutput(msg.body || "")}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         );
       })}

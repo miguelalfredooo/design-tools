@@ -10,6 +10,23 @@ def create_frame_objective_task(agent: Agent, context: dict) -> Task:
     metric = context.get("metric", "")
     constraints = context.get("constraints", {})
     user_segment = context.get("user_segment", "")
+    previous_design = context.get("previous_design_output") or {}
+    iteration = context.get("iteration", 1)
+
+    # Build iteration context if we have a previous design output
+    iteration_context = ""
+    if previous_design:
+        ideas_summary = ", ".join([idea.get("specific_change", "") for idea in previous_design.get("ideas", []) if idea.get("specific_change", "")])
+        alternative = previous_design.get("critique_anchor", {}).get("alternative", "")
+        tradeoff = previous_design.get("critique_anchor", {}).get("tradeoff", "")
+        iteration_context = f"""
+
+**ITERATION CONTEXT — Designer's previous round (Round {iteration - 1}):**
+Objective: {previous_design.get("objective", "")}
+Ideas explored: {ideas_summary}
+Open question: {alternative} — tradeoff: {tradeoff}
+
+Refine your frame in light of what was found. Update assumptions if any were invalidated."""
 
     if context.get("synthesis_tier") == "test":
         description = f"""PM test mode. Absolute minimum.
@@ -29,7 +46,7 @@ No essay."""
 Problem: {problem}
 Metric: {metric}
 User segment: {user_segment}
-Constraints: {constraints if constraints else "None"}
+Constraints: {constraints if constraints else "None"}{iteration_context}
 
 **Check these gates:**
 1. Is the problem specific enough to design against?
