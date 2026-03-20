@@ -171,7 +171,26 @@ export function DesignOpsClient() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <div className="text-sm font-semibold text-foreground">Goal</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-foreground">Goal</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle className="size-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <div className="space-y-1 text-xs">
+                          <p className="font-semibold">Goal should define:</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            <li><span className="font-semibold">Outcome:</span> what changes</li>
+                            <li><span className="font-semibold">Scope:</span> for whom, where</li>
+                            <li><span className="font-semibold">Timeframe:</span> by when</li>
+                          </ul>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Textarea
                     placeholder="What's the desired outcome?"
                     value={goal}
@@ -185,7 +204,26 @@ export function DesignOpsClient() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <div className="text-sm font-semibold text-foreground">Audience</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-semibold text-foreground">Audience</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button className="text-muted-foreground hover:text-foreground transition-colors">
+                            <HelpCircle className="size-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <div className="space-y-1 text-xs">
+                            <p className="font-semibold">Audience should include:</p>
+                            <ul className="list-disc list-inside space-y-0.5">
+                              <li><span className="font-semibold">Segment:</span> user type, size</li>
+                              <li><span className="font-semibold">Context:</span> behavior, platform</li>
+                              <li><span className="font-semibold">Characteristics:</span> needs, pain</li>
+                            </ul>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Textarea
                       placeholder="Who is this for?"
                       value={audience}
@@ -194,7 +232,26 @@ export function DesignOpsClient() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <div className="text-sm font-semibold text-foreground">Metric</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-semibold text-foreground">Metric</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button className="text-muted-foreground hover:text-foreground transition-colors">
+                            <HelpCircle className="size-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <div className="space-y-1 text-xs">
+                            <p className="font-semibold">Metrics should be:</p>
+                            <ul className="list-disc list-inside space-y-0.5">
+                              <li><span className="font-semibold">Measurable:</span> quantifiable</li>
+                              <li><span className="font-semibold">Behavioral:</span> user actions</li>
+                              <li><span className="font-semibold">Baseline:</span> current state</li>
+                            </ul>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Textarea
                       placeholder="How do we measure success?"
                       value={metric}
@@ -204,7 +261,26 @@ export function DesignOpsClient() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <div className="text-sm font-semibold text-foreground">Constraints</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-foreground">Constraints</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle className="size-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <div className="space-y-1 text-xs">
+                          <p className="font-semibold">Constraints are non-negotiables:</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            <li><span className="font-semibold">Timeline:</span> launch date</li>
+                            <li><span className="font-semibold">Technical:</span> platform limits</li>
+                            <li><span className="font-semibold">Resource:</span> budget, team</li>
+                          </ul>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Textarea
                     placeholder="Any limitations?"
                     value={constraints}
