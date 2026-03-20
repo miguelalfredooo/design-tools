@@ -86,6 +86,11 @@ async def run_crew(request: Request):
                 research_data,
             )
 
+            # Extract individual outputs (dict or fallback to string)
+            pm_output = result.get("pm_frame", result) if isinstance(result, dict) else result
+            research_output = result.get("research_synthesis", result) if isinstance(result, dict) else result
+            design_output = result.get("design_recommendation", result) if isinstance(result, dict) else result
+
             # PM Agent Output
             yield {
                 "event": "agent_message",
@@ -94,9 +99,9 @@ async def run_crew(request: Request):
                     "from_name": "Product Manager",
                     "to": "research_insights",
                     "subject": "Objective frame",
-                    "priority": "standard",
+                    "priority": "high",
                     "confidence": "n/a",
-                    "body": result,
+                    "body": pm_output,
                     "timestamp": datetime.now().isoformat(),
                 }),
             }
@@ -109,9 +114,9 @@ async def run_crew(request: Request):
                     "from_name": "Research & Insights",
                     "to": "product_designer" if stage != "discovery" else "product_manager",
                     "subject": "Evidence synthesis",
-                    "priority": "standard",
+                    "priority": "high",
                     "confidence": "medium",
-                    "body": result,
+                    "body": research_output,
                     "timestamp": datetime.now().isoformat(),
                 }),
             }
@@ -125,9 +130,9 @@ async def run_crew(request: Request):
                         "from_name": "Product Designer",
                         "to": "product_manager",
                         "subject": "Design recommendation",
-                        "priority": "standard",
+                        "priority": "high",
                         "confidence": "medium",
-                        "body": result,
+                        "body": design_output,
                         "timestamp": datetime.now().isoformat(),
                     }),
                 }

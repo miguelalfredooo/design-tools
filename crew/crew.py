@@ -88,8 +88,38 @@ def run_crew(
         verbose=True,
     )
 
+    # Execute and capture individual task outputs
     result = crew.kickoff()
-    return str(result)
+
+    # Return structured output with individual agent results
+    output = {
+        "pm_frame": "",
+        "research_synthesis": "",
+        "design_recommendation": "",
+        "full_output": str(result)
+    }
+
+    # Parse individual task outputs if available
+    task_outputs = getattr(result, "task_outputs", [])
+    for i, task_output in enumerate(task_outputs):
+        output_text = str(task_output)
+        if i == 0 and tasks[0].description.startswith("Frame"):
+            output["pm_frame"] = output_text
+        elif i < len(tasks) - 1 or tasks[i].description.find("Synthesize") != -1:
+            output["research_synthesis"] = output_text
+        elif "recommend" in tasks[i].description.lower():
+            output["design_recommendation"] = output_text
+
+    # Fallback: if task parsing fails, use full output
+    if not output["pm_frame"] and not output["research_synthesis"]:
+        # Split output by agent role mentions
+        full = str(result)
+        output["pm_frame"] = full
+        output["research_synthesis"] = full
+        if stage != "discovery":
+            output["design_recommendation"] = full
+
+    return output
 
 
 if __name__ == "__main__":

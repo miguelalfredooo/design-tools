@@ -43,7 +43,11 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
     if data_available:
         parts.append(f"\nDATA AVAILABLE: {', '.join(data_available)}")
     else:
-        parts.append(f"\nNOTE: Limited data available. Proceed with directional insights + stated assumptions.")
+        parts.append(
+            f"\nNOTE: No research data in database yet. That's fine — work with the strategy frame provided. "
+            f"Ground your synthesis in the problem statement, hypothesis, and user segment. "
+            f"Propose concrete next steps to validate your thinking."
+        )
 
     # Synthesis tier guidance
     if synthesis_tier == "quick":
@@ -61,18 +65,17 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
 
     parts.extend([
         "\nYour job:",
-        "1. Synthesize all available evidence using your two-pass method:",
-        "   - What does the data show? (direct findings)",
-        "   - What might it mean? (inferences + assumptions)",
-        "2. Label every finding with confidence: High / Medium / Low",
-        "3. Flag assumptions explicitly. Lead with assumptions for low-confidence findings.",
-        "4. Distinguish pain points from satisficing (users adapted to broken systems)",
-        "5. Always end with actionable next steps\n",
+        "1. Synthesize what's available (or what we can infer from the problem/objective)",
+        "2. Be specific about: what we know, what we're assuming, confidence levels",
+        "3. Distinguish pain points from workarounds users adapted to",
+        "4. **Always end with concrete next steps** — what to test, research, or build",
+        "   - If data is thin, propose what to gather (surveys, interviews, analytics, prototypes)",
+        "   - Make it specific: 'Talk to 5 new user segments in X role' not 'do more research'\n",
         "Rules:",
-        "- Ground everything in what the data actually says",
-        "- Flag inferences vs. direct findings",
-        "- Directional insight with stated assumptions > silence",
-        "- Never fabricate evidence. If data is thin, say so.",
+        "- No false conclusions, but directional thinking is better than waiting",
+        "- Flag assumptions explicitly. Confidence levels matter.",
+        "- Missing database data ≠ missing opportunities. Use the problem frame to move forward",
+        "- End every synthesis with a *specific* validation roadmap",
     ])
 
     # Tier-specific expected output
