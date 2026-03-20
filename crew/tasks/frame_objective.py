@@ -3,69 +3,54 @@ from crewai import Task, Agent
 
 def create_frame_objective_task(agent: Agent, context: dict) -> Task:
     """
-    PM frames whether this is worth solving and surfaces ranked assumptions for Research to pressure-test.
-    Output is a handoff, not a document.
+    PM frames the problem and surfaces ranked assumptions.
+    Output is 5 things: frame, case, assumptions, constraints, trade-off.
     """
     problem = context.get("problem_statement", "")
-    objective = context.get("objective", "")
     metric = context.get("metric", "")
     constraints = context.get("constraints", {})
-    why_now = context.get("why_now", "")
-    stage = context.get("stage", "discovery")
+    user_segment = context.get("user_segment", "")
 
-    # Gate check
-    parts = [
-        "**GATE CHECK — answer these before framing anything:**\n"
-        "1. Is the problem specific enough to design against?\n"
-        "2. Do we know who specifically suffers from this — or are we assuming?\n"
-        "3. Is there a measurable outcome, or is this a feeling?\n"
-        "4. Why does this need to be solved now vs. next quarter?\n\n"
-        "If any gate fails: name the gap. Do not proceed to framing.\n"
-        "If all gates pass: continue to handoff.\n"
-    ]
+    description = f"""You are a Product Manager. Your job: frame this problem and surface what we don't know.
 
-    if problem:
-        parts.append(f"**Problem statement:** {problem}")
-    else:
-        parts.append("**Problem statement:** [MISSING — this is data]")
+**Input:**
+Problem: {problem}
+Metric: {metric}
+User segment: {user_segment}
+Constraints: {constraints if constraints else "None"}
 
-    if metric:
-        parts.append(f"**Metric to move:** {metric}")
-    else:
-        parts.append("**Metric to move:** [MISSING — this is data]")
+**Check these gates:**
+1. Is the problem specific enough to design against?
+2. Do we know who suffers from this, or are we assuming?
+3. Is there a measurable outcome?
+4. Why now vs. next quarter?
 
-    if constraints:
-        constraint_text = "\n  - ".join(f"{k}: {v}" for k, v in constraints.items())
-        parts.append(f"**Hard constraints (non-negotiable):**\n  - {constraint_text}")
+If any gate fails: name the gap. Stop. Do not proceed.
 
-    if why_now:
-        parts.append(f"**Why now:** {why_now}")
-    else:
-        parts.append("**Why now:** [MISSING — surface this if blank]")
+If all gates pass: produce exactly 5 things:
 
-    parts.extend([
-        "\n**HANDOFF OUTPUT (if gates pass):**\n\n"
-        "1. **Strategic frame** — problem (one sentence) + user (one phrase) + outcome (one number)\n\n"
-        "2. **Business case** — why this, why now (two sentences max)\n\n"
-        "3. **Ranked assumptions for Research** — 3–5 assumptions this brief rests on\n"
-        "   Each assumption tagged: HIGH / MED / LOW risk-if-wrong\n"
-        "   For each HIGH assumption: one sentence on what would prove us wrong\n\n"
-        "4. **Hard constraints** — what is non-negotiable (time, tech, scope)\n\n"
-        "5. **What we're NOT solving** — one explicit trade-off decision\n\n"
-        "Do not produce a document. This is a handoff. Research will read the ranked assumptions "
-        "and pressure-test them against data. Designer will read the hard constraints. Both will pressure-test what we say about 'proof of wrongness.'"
-    ])
+1. **Frame** (one sentence each):
+   - Problem
+   - User
+   - Metric/outcome
+
+2. **Why this, why now** (one sentence)
+
+3. **Ranked assumptions** (3–5, each tagged HIGH/MED/LOW):
+   For each HIGH: "Prove us wrong if [X]"
+
+4. **Hard constraints** (non-negotiable: time, tech, scope)
+
+5. **What we're NOT solving** (one trade-off)
+
+Write directly. No essay. No preamble. Just the 5 things."""
 
     return Task(
-        description="\n".join(parts),
+        description=description,
         expected_output=(
-            "Handoff to Research:\n"
-            "- Strategic frame (tight prose, not essay)\n"
-            "- 3–5 ranked assumptions with risk levels (HIGH / MED / LOW)\n"
-            "- For each HIGH: one sentence on what would prove it wrong\n"
-            "- Hard constraints\n"
-            "- One explicit trade-off decision\n\n"
-            "If gates fail: name the gap and stop. Do not proceed to assumptions."
+            "Frame. Business case. Ranked assumptions (HIGH/MED/LOW risk). "
+            "For each HIGH: one sentence on how we'd be wrong. "
+            "Hard constraints. One trade-off we're not solving for."
         ),
         agent=agent,
     )
