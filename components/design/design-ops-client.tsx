@@ -55,8 +55,8 @@ export function DesignOpsClient() {
   }, [messages]);
 
   const populateSampleData = () => {
-    setTitle("Raptive Creator Engagement");
-    setDescription("Testing the iteration loop with creator engagement problem space");
+    setTitle("Raptive Creator Tools");
+    setDescription("Why are creators underengaged, and what tools would drive consistent posting and pageview growth on Raptive Community?");
     setProblem("Creators average 1.8 posts/month vs. 3.2x on comparable platforms. 38% of active creators are underengaged (under 2 posts/month, under 20% comment response rate). Exit surveys show 61% don't know what to post or when, 29% find monitoring too time-consuming. No current tools exist for scheduling, analytics, or engagement signals.");
     setGoal("Increase consistent posting frequency, boost engagement metrics, and grow pageviews among our creator community.");
     setAudience("Mid-tier creators (10k–100k followers) on Raptive Community — 67% of total pageviews but only 34% of posting volume. Highest leverage cohort. Includes team members who manage creator presence on their behalf.");
