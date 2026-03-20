@@ -103,14 +103,30 @@ def run_crew(
         "full_output": str(result)
     }
 
-    # Extract crew result as string
+    # Extract individual task outputs from crew result
+    # CrewOutput has a raw output that includes all agent responses
     result_str = str(result) if result else ""
 
-    # Use the full crew output for all cards
-    # The crew produces comprehensive output covering PM strategy, research synthesis, and design direction
-    output["pm_frame"] = result_str
-    output["research_synthesis"] = result_str
-    output["design_recommendation"] = result_str
+    # Split by agent markers to extract individual perspectives
+    # Each agent's response is marked by their role in the output
+    parts = result_str.split("╭")  # Split by agent section markers
+
+    pm_output = ""
+    research_output = ""
+    design_output = ""
+
+    for part in parts:
+        if "Product Manager" in part or "Frame" in part:
+            pm_output = part.split("Final Answer")[1].split("╰")[0] if "Final Answer" in part else part
+        elif "Research & Insights" in part or "Synthesize" in part:
+            research_output = part.split("Final Answer")[1].split("╰")[0] if "Final Answer" in part else part
+        elif "Product Designer" in part or "Design" in part or "Recommend" in part:
+            design_output = part.split("Final Answer")[1].split("╰")[0] if "Final Answer" in part else part
+
+    # Fallback to full output if parsing fails
+    output["pm_frame"] = pm_output.strip() if pm_output else result_str
+    output["research_synthesis"] = research_output.strip() if research_output else result_str
+    output["design_recommendation"] = design_output.strip() if design_output else result_str
 
     return output
 
