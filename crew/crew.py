@@ -1,9 +1,16 @@
 from crewai import Crew, Process, LLM
 from typing import Optional, Any
 
-from .agents import create_pm, create_research_insights, create_product_design
-from .tasks import create_frame_objective_task, create_synthesize_task, create_recommend_solution_task
-from .tools import fetch_evidence
+try:
+    # When running as a module
+    from .agents import create_pm, create_research_insights, create_product_design
+    from .tasks import create_frame_objective_task, create_synthesize_task, create_recommend_solution_task
+    from .tools import fetch_evidence
+except ImportError:
+    # When running standalone with uvicorn
+    from agents import create_pm, create_research_insights, create_product_design
+    from tasks import create_frame_objective_task, create_synthesize_task, create_recommend_solution_task
+    from tools import fetch_evidence
 
 
 def get_llm() -> LLM:

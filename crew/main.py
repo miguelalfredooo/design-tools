@@ -69,7 +69,10 @@ async def run_crew(request: Request):
         }
 
         try:
-            from .crew import run_crew as _run_crew
+            try:
+                from crew.crew import run_crew as _run_crew
+            except ImportError:
+                from crew import run_crew as _run_crew
 
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
