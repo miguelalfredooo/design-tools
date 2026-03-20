@@ -159,7 +159,7 @@ export async function DELETE(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   const db = getSupabaseAdmin();
 

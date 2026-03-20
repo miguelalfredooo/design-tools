@@ -14,8 +14,6 @@ export interface ExplorationOption {
   rationale?: string;
   suggested?: boolean;
   suggestedBy?: string;
-  /** @deprecated Use mediaUrl instead */
-  imageUrl?: string;
 }
 
 export interface Reaction {
@@ -54,8 +52,6 @@ export interface Vote {
   effort?: EffortLevel;
   impact?: EffortLevel;
   createdAt: number;
-  /** @deprecated Use voterName instead */
-  participantName?: string;
 }
 
 export interface ExplorationSession {

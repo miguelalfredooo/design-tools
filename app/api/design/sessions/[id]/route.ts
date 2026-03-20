@@ -13,7 +13,7 @@ export async function GET(
   const [sessionRes, optionsRes, allVotesRes] = await Promise.all([
     db.from("voting_sessions").select("*").eq("id", id).single(),
     db.from("voting_options").select("*").eq("session_id", id).order("position"),
-    db.from("voting_votes").select("session_id, voter_token").eq("session_id", id),
+    db.from("voting_votes").select("session_id, voter_id").eq("session_id", id),
   ]);
 
   if (sessionRes.error || !sessionRes.data) {
@@ -22,7 +22,7 @@ export async function GET(
 
   // Count distinct voters
   const allVotes = allVotesRes.data ?? [];
-  const distinctVoters = new Set(allVotes.map((v) => v.voter_token));
+  const distinctVoters = new Set(allVotes.map((v) => v.voter_id));
   const voteCount = distinctVoters.size;
 
   // During revealed phase, return all votes
@@ -90,7 +90,7 @@ export async function PATCH(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
   if (!sessionValid && !creatorToken && !adminPassword) {
@@ -149,7 +149,7 @@ export async function DELETE(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
   if (!sessionValid && !creatorToken && !adminPassword) {

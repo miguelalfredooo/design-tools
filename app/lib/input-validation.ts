@@ -227,9 +227,9 @@ export function validateSessionUpdate(body: unknown): ValidationResult {
   if (
     b.phase !== undefined &&
     b.phase !== null &&
-    !["discovery", "voting", "complete"].includes(b.phase as string)
+    !["setup", "voting", "revealed"].includes(b.phase as string)
   ) {
-    errors.phase = 'phase must be "discovery", "voting", or "complete"';
+    errors.phase = 'phase must be "setup", "voting", or "revealed"';
   }
 
   // participantCount: optional, 1-10000 if present

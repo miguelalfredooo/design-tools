@@ -10,6 +10,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { generateId } from "@/lib/design-utils";
 import type { MediaType } from "@/lib/design-types";
 import { OptionForm } from "@/components/design/option-form";
+import { SessionBriefForm, type SessionBriefData } from "@/components/design/session-brief-form";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +21,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CarrierInput } from "@/components/ui/carrier-input";
+import { CarrierTextarea } from "@/components/ui/carrier-textarea";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 interface OptionDraft {
   key: string;
@@ -58,10 +59,15 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
   const [previewUrl, setPreviewUrl] = useState("");
   const [participantCount, setParticipantCount] = useState(3);
   const [showBrief, setShowBrief] = useState(false);
-  const [problem, setProblem] = useState("");
-  const [goal, setGoal] = useState("");
-  const [audience, setAudience] = useState("");
-  const [constraints, setConstraints] = useState("");
+  const [brief, setBrief] = useState<SessionBriefData>({
+    title: "",
+    description: "",
+    problem: "",
+    goal: "",
+    audience: "",
+    constraints: "",
+    previewUrl: "",
+  });
 
   // Step 2 — Options
   const [options, setOptions] = useState<OptionDraft[]>([
@@ -76,10 +82,15 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
     setPreviewUrl("");
     setParticipantCount(3);
     setShowBrief(false);
-    setProblem("");
-    setGoal("");
-    setAudience("");
-    setConstraints("");
+    setBrief({
+      title: "",
+      description: "",
+      problem: "",
+      goal: "",
+      audience: "",
+      constraints: "",
+      previewUrl: "",
+    });
     setOptions([makeDefaultOption(), makeDefaultOption()]);
   }
 
@@ -117,10 +128,10 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
         })),
         previewUrl.trim() || undefined,
         {
-          problem: problem.trim() || undefined,
-          goal: goal.trim() || undefined,
-          audience: audience.trim() || undefined,
-          constraints: constraints.trim() || undefined,
+          problem: brief.problem.trim() || undefined,
+          goal: brief.goal.trim() || undefined,
+          audience: brief.audience.trim() || undefined,
+          constraints: brief.constraints.trim() || undefined,
         }
       );
       toast.success(`Created "${session.title}"`);
@@ -192,23 +203,25 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="session-title">What are you exploring?</Label>
-              <Input
+              <CarrierInput
                 id="session-title"
                 placeholder="e.g. Homepage hero redesign"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus
+                designSize="md"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="session-desc">Description</Label>
-              <Textarea
+              <CarrierTextarea
                 id="session-desc"
                 placeholder="Brief context for voters..."
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                designSize="sm"
               />
             </div>
 
@@ -220,7 +233,6 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
                     <Button
                       key={n}
                       type="button"
-                      size="sm"
                       variant={participantCount === n ? "default" : "outline"}
                       className="flex-1 h-8 text-xs"
                       onClick={() => setParticipantCount(n)}
@@ -234,74 +246,24 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
 
             <div className="space-y-2">
               <Label htmlFor="preview-url">Preview URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input
+              <CarrierInput
                 id="preview-url"
                 type="url"
                 placeholder="https://..."
                 value={previewUrl}
                 onChange={(e) => setPreviewUrl(e.target.value)}
+                designSize="md"
               />
             </div>
 
-            {/* Collapsible brief section */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowBrief(!showBrief)}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
-              >
-                <ChevronDown className={cn("size-3.5 transition-transform", !showBrief && "-rotate-90")} />
-                <span className="font-medium">Design brief</span>
-                <span className="text-xs">(optional)</span>
-              </button>
-
-              {showBrief && (
-                <div className="space-y-3 mt-3 pl-5 border-l-2 border-border">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="brief-problem" className="text-xs">Problem</Label>
-                    <Textarea
-                      id="brief-problem"
-                      placeholder="What problem does this solve?"
-                      rows={2}
-                      value={problem}
-                      onChange={(e) => setProblem(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="brief-goal" className="text-xs">Goal</Label>
-                    <Textarea
-                      id="brief-goal"
-                      placeholder="What's the desired outcome?"
-                      rows={2}
-                      value={goal}
-                      onChange={(e) => setGoal(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="brief-audience" className="text-xs">Audience</Label>
-                    <Input
-                      id="brief-audience"
-                      placeholder="Who is this for?"
-                      value={audience}
-                      onChange={(e) => setAudience(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="brief-constraints" className="text-xs">Constraints</Label>
-                    <Input
-                      id="brief-constraints"
-                      placeholder="Any limitations?"
-                      value={constraints}
-                      onChange={(e) => setConstraints(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Session brief form */}
+            <SessionBriefForm
+              brief={brief}
+              onBriefChange={(field, value) => setBrief((prev) => ({ ...prev, [field]: value }))}
+              expanded={showBrief}
+              onExpandedChange={setShowBrief}
+              showHeader={true}
+            />
           </div>
         )}
 
@@ -327,7 +289,6 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
                   {options.length > 1 && (
                     <Button
                       variant="ghost"
-                      size="icon-xs"
                       className="mt-1.5"
                       onClick={() => removeOption(opt.key)}
                     >

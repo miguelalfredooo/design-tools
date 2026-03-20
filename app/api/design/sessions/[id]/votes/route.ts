@@ -111,17 +111,18 @@ export async function POST(
   // Check if we should auto-reveal
   const { data: allVotes } = await db
     .from("voting_votes")
-    .select("voter_token")
+    .select("voter_id")
     .eq("session_id", sessionId);
 
-  const distinctVoters = new Set((allVotes ?? []).map((v) => v.voter_token));
+  const distinctVoters = new Set((allVotes ?? []).map((v) => v.voter_id));
   const voteCount = distinctVoters.size;
 
-  if (voteCount >= session.participant_count) {
+  if (voteCount >= session.participant_count && session.phase === "voting") {
     await db
       .from("voting_sessions")
       .update({ phase: "revealed" })
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("phase", "voting");
   }
 
   return NextResponse.json({ ok: true });
@@ -144,7 +145,7 @@ export async function PATCH(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   const db = getSupabaseAdmin();
 

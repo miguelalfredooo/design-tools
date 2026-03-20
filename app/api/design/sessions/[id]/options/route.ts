@@ -41,7 +41,7 @@ export async function POST(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   const db = getSupabaseAdmin();
 
@@ -126,7 +126,7 @@ export async function PATCH(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
   if (!sessionValid && !creatorToken && !adminPassword) {
@@ -187,7 +187,7 @@ export async function DELETE(
 
   // Check sessionToken first (preferred method)
   const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? verifySessionToken(sessionToken).valid : false;
+  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
   if (!sessionValid && !creatorToken && !adminPassword) {

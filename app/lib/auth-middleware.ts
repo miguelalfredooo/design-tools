@@ -17,10 +17,10 @@ export type NextApiHandler = (request: Request) => Promise<NextResponse>;
  * const { valid, error } = validateSessionToken(request);
  * if (!valid) return NextResponse.json({ error }, { status: 401 });
  */
-export function validateSessionToken(request: Request): {
+export async function validateSessionToken(request: Request): Promise<{
   valid: boolean;
   error?: string;
-} {
+}> {
   // Extract the cookie header
   const cookieHeader = request.headers.get("cookie") || "";
 
@@ -43,7 +43,7 @@ export function validateSessionToken(request: Request): {
   }
 
   // Verify the token
-  return verifySessionToken(sessionToken);
+  return await verifySessionToken(sessionToken);
 }
 
 /**
@@ -69,7 +69,7 @@ export function validateSessionToken(request: Request): {
 export function withAuth(handler: NextApiHandler): NextApiHandler {
   return async (request: Request): Promise<NextResponse> => {
     // Validate session token from cookies
-    const { valid, error } = validateSessionToken(request);
+    const { valid, error } = await validateSessionToken(request);
 
     if (!valid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

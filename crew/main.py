@@ -11,6 +11,10 @@ from sse_starlette.sse import EventSourceResponse
 
 load_dotenv()
 
+# Ensure API key is loaded from environment
+if not os.environ.get("ANTHROPIC_API_KEY"):
+    raise ValueError("ANTHROPIC_API_KEY environment variable is required")
+
 app = FastAPI(title="Carrier Crew API")
 
 
@@ -65,7 +69,7 @@ async def run_crew(request: Request):
         }
 
         try:
-            from crew import run_crew as _run_crew
+            from .crew import run_crew as _run_crew
 
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(

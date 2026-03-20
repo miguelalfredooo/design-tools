@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import type { MediaType } from "@/lib/design-types";
-import { Button } from "@/components/ui/button";
+import { CarrierInput } from "@/components/ui/carrier-input";
+import { CarrierTextarea } from "@/components/ui/carrier-textarea";
+import { useOptionMedia } from "@/hooks/use-option-media";
 import {
   Select,
   SelectContent,
@@ -33,34 +34,7 @@ export function DraftOptionCard({
   onChange,
   onRemove,
 }: DraftOptionCardProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/design/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      onChange("mediaType", "image");
-      onChange("mediaUrl", data.url);
-    } catch {
-      // silently fail
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  function clearImage() {
-    onChange("mediaType", "none");
-    onChange("mediaUrl", "");
-  }
-
+  const { fileRef, uploading, handleFileChange, clearImage } = useOptionMedia(onChange);
   const hasImage = value.mediaType === "image" && value.mediaUrl;
 
   return (
@@ -121,21 +95,23 @@ export function DraftOptionCard({
       />
 
       {/* Title — matches VotingOptionCard title style */}
-      <input
+      <CarrierInput
         type="text"
         placeholder={`Option ${index + 1} title`}
         value={value.title}
         onChange={(e) => onChange("title", e.target.value)}
-        className="text-sm font-semibold leading-tight bg-transparent border-none outline-none placeholder:text-muted-foreground/40 w-full mb-1"
+        designSize="sm"
+        className="font-semibold leading-tight mb-1"
       />
 
       {/* Description — matches VotingOptionCard body style */}
-      <textarea
+      <CarrierTextarea
         placeholder="Description (optional)"
         value={value.description}
         onChange={(e) => onChange("description", e.target.value)}
         rows={2}
-        className="text-sm leading-relaxed text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 w-full resize-none mb-2"
+        designSize="sm"
+        className="leading-relaxed text-muted-foreground mb-2"
       />
 
       {/* Media type select — for non-image types */}
@@ -156,7 +132,7 @@ export function DraftOptionCard({
             </SelectContent>
           </Select>
           {value.mediaType !== "none" && value.mediaType !== "image" && (
-            <input
+            <CarrierInput
               type="url"
               placeholder={
                 value.mediaType === "figma-embed"
@@ -165,16 +141,18 @@ export function DraftOptionCard({
               }
               value={value.mediaUrl}
               onChange={(e) => onChange("mediaUrl", e.target.value)}
-              className="mt-2 text-xs bg-transparent border-none outline-none placeholder:text-muted-foreground/30 w-full"
+              designSize="sm"
+              className="mt-2"
             />
           )}
           {value.mediaType === "image" && !hasImage && (
-            <input
+            <CarrierInput
               type="url"
               placeholder="https://example.com/design.png"
               value={value.mediaUrl}
               onChange={(e) => onChange("mediaUrl", e.target.value)}
-              className="mt-2 text-xs bg-transparent border-none outline-none placeholder:text-muted-foreground/30 w-full"
+              designSize="sm"
+              className="mt-2"
             />
           )}
         </div>

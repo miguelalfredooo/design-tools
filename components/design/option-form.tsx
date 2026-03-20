@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import type { MediaType } from "@/lib/design-types";
-import { Input } from "@/components/ui/input";
+import { CarrierInput } from "@/components/ui/carrier-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useOptionMedia } from "@/hooks/use-option-media";
 import {
   Select,
   SelectContent,
@@ -29,48 +29,22 @@ interface OptionFormProps {
 }
 
 export function OptionForm({ value, onChange, titlePlaceholder = "Option title" }: OptionFormProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/design/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      onChange("mediaType", "image");
-      onChange("mediaUrl", data.url);
-    } catch {
-      // silently fail — user can retry
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  function clearImage() {
-    onChange("mediaType", "none");
-    onChange("mediaUrl", "");
-  }
-
+  const { fileRef, uploading, handleFileChange, clearImage } = useOptionMedia(onChange);
   const hasImage = value.mediaType === "image" && value.mediaUrl;
 
   return (
     <div className="space-y-1.5">
-      <Input
+      <CarrierInput
         placeholder={titlePlaceholder}
         value={value.title}
         onChange={(e) => onChange("title", e.target.value)}
+        designSize="sm"
       />
-      <Input
+      <CarrierInput
         placeholder="Description (optional)"
         value={value.description}
         onChange={(e) => onChange("description", e.target.value)}
+        designSize="sm"
       />
 
       {/* Image attach */}
@@ -89,7 +63,6 @@ export function OptionForm({ value, onChange, titlePlaceholder = "Option title" 
         <Button
           type="button"
           variant="outline"
-          size="sm"
           className="w-full gap-2"
           disabled={uploading}
           onClick={() => fileRef.current?.click()}
@@ -137,7 +110,7 @@ export function OptionForm({ value, onChange, titlePlaceholder = "Option title" 
                 ? "Figma file URL"
                 : "Excalidraw URL"}
           </Label>
-          <Input
+          <CarrierInput
             type="url"
             placeholder={
               value.mediaType === "image"
@@ -148,6 +121,7 @@ export function OptionForm({ value, onChange, titlePlaceholder = "Option title" 
             }
             value={value.mediaUrl}
             onChange={(e) => onChange("mediaUrl", e.target.value)}
+            designSize="sm"
           />
         </div>
       )}

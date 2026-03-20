@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Brain } from "lucide-react";
-import { toast } from "sonner";
-import { DesignOpsObjectives } from "@/components/design/design-ops-objectives";
+import { useState, useEffect } from "react";
+import { Brain, ChevronDown } from "lucide-react";
 import { DesignOpsCrewRunner } from "@/components/design/design-ops-crew-runner";
 import { DesignOpsTimeline } from "@/components/design/design-ops-timeline";
 import { useAdmin } from "@/hooks/use-admin";
+import { cn } from "@/lib/utils";
+import { CarrierInput } from "@/components/ui/carrier-input";
+import { CarrierTextarea } from "@/components/ui/carrier-textarea";
 import type { Objective, AgentMessage } from "@/lib/design-ops-types";
 
 export function DesignOpsClient() {
@@ -15,8 +16,15 @@ export function DesignOpsClient() {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showBrief, setShowBrief] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [problem, setProblem] = useState("");
+  const [goal, setGoal] = useState("");
+  const [audience, setAudience] = useState("");
+  const [constraints, setConstraints] = useState("");
 
-  // Load objectives
   useEffect(() => {
     fetch("/api/design-ops/objectives")
       .then((r) => r.json())
@@ -25,38 +33,6 @@ export function DesignOpsClient() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
-
-  const handleAddObjective = useCallback(
-    async (obj: Omit<Objective, "id" | "createdAt">) => {
-      try {
-        const res = await fetch("/api/design-ops/objectives", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(obj),
-        });
-        if (!res.ok) throw new Error("Failed to add objective");
-        const newObj = await res.json();
-        setObjectives((prev) => [...prev, newObj]);
-        toast.success("Objective added");
-      } catch {
-        toast.error("Failed to add objective");
-      }
-    },
-    []
-  );
-
-  const handleDeleteObjective = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`/api/design-ops/objectives?id=${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete");
-      setObjectives((prev) => prev.filter((o) => o.id !== id));
-      toast.success("Objective removed");
-    } catch {
-      toast.error("Failed to remove objective");
-    }
   }, []);
 
   if (!isAdmin) {
@@ -80,7 +56,7 @@ export function DesignOpsClient() {
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black tracking-tight">Design Ops</h1>
@@ -89,33 +65,120 @@ export function DesignOpsClient() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Left sidebar — Objectives */}
-        <div className="space-y-6">
-          <DesignOpsObjectives
-            objectives={objectives}
-            onAdd={handleAddObjective}
-            onDelete={handleDeleteObjective}
+      {/* Setup Form - Carrier /new aesthetic */}
+      <div className="space-y-6">
+        {/* Title & Description */}
+        <div className="space-y-3">
+          <CarrierInput
+            placeholder="Session title..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            designSize="lg"
+            className="font-bold tracking-tight"
+          />
+          <CarrierTextarea
+            placeholder="Brief description for voters..."
+            rows={1}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="text-muted-foreground"
           />
         </div>
 
-        {/* Main content — Runner + Timeline */}
-        <div className="space-y-6">
-          <DesignOpsCrewRunner
-            objectives={objectives}
-            onMessages={setMessages}
-            onRunStatusChange={setRunning}
-          />
+        {/* Context Brief */}
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => setShowBrief(!showBrief)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors"
+          >
+            Context Brief
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform",
+                showBrief ? "rotate-180" : ""
+              )}
+            />
+          </button>
 
-          {(messages.length > 0 || running) && (
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                {running ? "Crew Activity" : "Results"}
-              </h3>
-              <DesignOpsTimeline messages={messages} />
+          {showBrief && (
+            <div className="space-y-6">
+              {/* Problem / Goal */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <div className="text-sm font-semibold text-foreground">Problem</div>
+                  <CarrierInput
+                    placeholder="What problem does this solve?"
+                    value={problem}
+                    onChange={(e) => setProblem(e.target.value)}
+                    designSize="sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-sm font-semibold text-foreground">Goal</div>
+                  <CarrierInput
+                    placeholder="What's the desired outcome?"
+                    value={goal}
+                    onChange={(e) => setGoal(e.target.value)}
+                    designSize="sm"
+                  />
+                </div>
+              </div>
+
+              {/* Audience / Constraints */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <div className="text-sm font-semibold text-foreground">Audience</div>
+                  <CarrierInput
+                    placeholder="Who is this for?"
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value)}
+                    designSize="sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-sm font-semibold text-foreground">Constraints</div>
+                  <CarrierInput
+                    placeholder="Any limitations?"
+                    value={constraints}
+                    onChange={(e) => setConstraints(e.target.value)}
+                    designSize="sm"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Preview URL */}
+        <div className="space-y-1.5">
+          <CarrierInput
+            type="url"
+            placeholder="Preview URL (optional) — https://..."
+            value={previewUrl}
+            onChange={(e) => setPreviewUrl(e.target.value)}
+            designSize="sm"
+            className="text-muted-foreground"
+          />
+        </div>
+      </div>
+
+      {/* Crew Runner + Timeline */}
+      <div className="space-y-6">
+        <DesignOpsCrewRunner
+          objectives={objectives}
+          onMessages={setMessages}
+          onRunStatusChange={setRunning}
+        />
+
+        {(messages.length > 0 || running) && (
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              {running ? "Crew Activity" : "Results"}
+            </h3>
+            <DesignOpsTimeline messages={messages} />
+          </div>
+        )}
       </div>
     </div>
   );

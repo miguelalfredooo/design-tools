@@ -61,8 +61,8 @@ import {
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { CarrierInput } from "@/components/ui/carrier-input";
+import { CarrierTextarea } from "@/components/ui/carrier-textarea";
 import { Separator } from "@/components/ui/separator";
 import { SynthesizeButton } from "@/components/design/synthesize-button";
 import type { ResearchInsight } from "@/lib/research-types";
@@ -156,7 +156,7 @@ export function ResearchClient({ batch: initialBatch }: Props) {
         <h2 className="text-2xl font-black tracking-tight">Research</h2>
         <Button
           variant="outline"
-          size="sm"
+          
           onClick={handleSeedDemo}
           disabled={seeding}
           className="gap-1.5"
@@ -691,11 +691,11 @@ function ObservationForm({ onSubmit }: { onSubmit: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <Textarea
+      <CarrierTextarea
         placeholder="What did you observe? e.g. 'User hovered over share button for 12s before giving up'"
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        className="min-h-[80px] resize-none"
+        className="min-h-[80px]"
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
@@ -719,18 +719,19 @@ function ObservationForm({ onSubmit }: { onSubmit: () => void }) {
         </select>
 
         {area === "__custom" && (
-          <Input
+          <CarrierInput
             placeholder="Custom area..."
             value={customArea}
             onChange={(e) => setCustomArea(e.target.value)}
-            className="w-40 h-9"
+            designSize="sm"
+            className="w-40"
           />
         )}
 
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          
           className="gap-1 text-muted-foreground"
           onClick={() => setShowSource(!showSource)}
         >
@@ -755,11 +756,11 @@ function ObservationForm({ onSubmit }: { onSubmit: () => void }) {
       </div>
 
       {showSource && (
-        <Input
+        <CarrierInput
           placeholder="Mixpanel replay URL, Slack link, etc."
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
-          className="h-9"
+          designSize="sm"
         />
       )}
     </form>
@@ -815,7 +816,7 @@ function ShareLinkSection() {
       ) : (
         <Button
           variant="outline"
-          size="sm"
+          
           onClick={generateToken}
           disabled={generating}
           className="gap-1.5"
@@ -1010,7 +1011,7 @@ function ObservationsTab() {
 
         <Button
           variant={groupByArea ? "secondary" : "ghost"}
-          size="sm"
+          
           className="gap-1 h-8"
           onClick={() => setGroupByArea(!groupByArea)}
         >
@@ -1028,7 +1029,7 @@ function ObservationsTab() {
           <>
             <Button
               variant="ghost"
-              size="sm"
+              
               className="h-8 text-xs"
               onClick={selectAllVisible}
             >
@@ -1037,7 +1038,7 @@ function ObservationsTab() {
 
             {selected.size > 0 && (
               <Button
-                size="sm"
+                
                 className="gap-1.5 h-8"
                 onClick={handleSynthesize}
                 disabled={synthesizing}
@@ -1172,16 +1173,18 @@ function AddSegmentForm({ onCreated }: { onCreated: () => void }) {
     <Card>
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-3">
-          <Input
+          <CarrierInput
             placeholder="Segment name (e.g. Active Members)"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
+            designSize="md"
           />
-          <Input
+          <CarrierInput
             placeholder="Description (optional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            designSize="md"
           />
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={submitting || !name.trim()}>
@@ -1429,7 +1432,7 @@ function ReplaysTab() {
           Annotated Mixpanel recordings with friction analysis and recommendations.
         </p>
         <Button
-          size="sm"
+          
           variant="outline"
           onClick={handleSynthesize}
           disabled={loading}

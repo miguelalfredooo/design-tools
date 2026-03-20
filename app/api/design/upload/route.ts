@@ -11,7 +11,7 @@ const BUCKET = 'design-options';
  */
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
-  return forwarded ? forwarded.split(',')[0].trim() : request.ip || 'unknown';
+  return forwarded ? forwarded.split(',')[0].trim() : 'unknown';
 }
 
 export async function POST(request: NextRequest) {

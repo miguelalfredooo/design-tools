@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, Play, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { CarrierTextarea } from "@/components/ui/carrier-textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
@@ -189,12 +189,13 @@ export function DesignOpsCrewRunner({
       {/* Prompt input */}
       <div>
         <label className="text-sm font-medium mb-1.5 block">Focus prompt</label>
-        <Textarea
+        <CarrierTextarea
           placeholder="What should Oracle focus on? (e.g., Why are users dropping off during onboarding?)"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
           disabled={running}
+          designSize="sm"
         />
       </div>
 
