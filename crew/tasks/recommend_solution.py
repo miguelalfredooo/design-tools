@@ -4,13 +4,15 @@ from crewai import Task, Agent
 def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
     """
     Designer proposes 2-3 ideas to validate the highest-risk assumption.
-    Output: specific interactions to test.
+    Receives: highest_risk_assumption (string, focused)
+    Output: 2-3 concrete ideas with feasibility, trade-offs, validation steps.
     """
     problem = context.get("problem_statement", "")
     metric = context.get("metric", "")
     constraints = context.get("constraints", {})
     exploration_data = context.get("research_data", {})
     user_segment = context.get("user_segment", "")
+    highest_risk_assumption = context.get("highest_risk_assumption", "")
 
     has_exploration = bool(exploration_data.get("prototypes_tested") or exploration_data.get("images"))
 
@@ -18,12 +20,10 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
     if constraints:
         constraint_str = "Hard constraints: " + ", ".join(f"{k}={v}" for k, v in constraints.items())
 
-    research_output = context.get("research_output", "")
+    description = f"""You are a Product Designer. Propose 2-3 ideas to test this assumption.
 
-    description = f"""You are a Product Designer. Propose 2-3 ideas to test the highest-risk assumption.
-
-**Research's pressure-test:**
-{research_output}
+**The assumption you're validating:**
+{highest_risk_assumption}
 
 **Your constraints:**
 Problem: {problem}
@@ -33,27 +33,54 @@ User segment: {user_segment}
 
 **Check:**
 1. Does this respect hard constraints? If not, name the conflict.
-2. Is there prior exploration?
-   - If yes: build on consensus, explain if deviating
-   - If no: discovery mode (solutions are provocations)
+2. Is there prior exploration? If yes, build on consensus.
+3. What user behavior must be true for each idea?
 
-**For each of 2-3 ideas:**
-1. **Specific change** — what exactly changes in UI/flow (be concrete)
-2. **Assumption being tested** — what user behavior must be true
-3. **Trade-off** — what we give up
-4. **Feasibility** — engineering lift
-5. **Prototype first** — smallest thing to build and test
+**For each of 2-3 ideas, provide:**
+- specific_change: Exact UI/flow change
+- why: Which research finding this addresses
+- assumption_tested: What user behavior must be true
+- tradeoff: What we give up
+- second_order_effect: One downstream consequence
+- feasibility: low / medium / high
+- validation: Smallest interaction to prototype
 
-**Close with:**
-"The objective this serves is [X]. If someone disagrees, the trade-off is: [alternative] means giving up [specific thing]."
+**Then provide:**
+- objective: What this design serves
+- critique_anchor: Alternative approach and its trade-off
 
-Write direct. Concrete. No generic improvements."""
+**CRITICAL:**
+- YOU MUST return valid JSON ONLY
+- No explanations, no markdown, no extra text
+- No preamble. No closing. JSON only."""
+
+    json_schema = """
+Output ONLY valid JSON (no markdown, no preamble):
+{
+  "ideas": [
+    {
+      "specific_change": "string",
+      "why": "string",
+      "assumption_tested": "string",
+      "tradeoff": "string",
+      "second_order_effect": "string",
+      "feasibility": "low | medium | high",
+      "validation": "string"
+    }
+  ],
+  "objective": "string",
+  "critique_anchor": {
+    "alternative": "string",
+    "tradeoff": "string"
+  }
+}
+"""
 
     return Task(
-        description=description,
+        description=description + f"\n\n**OUTPUT FORMAT (JSON only):**\n{json_schema}",
         expected_output=(
-            "2–3 specific ideas with: change / assumption / trade-off / feasibility / prototype priority. "
-            "Close with objective and trade-off anchor."
+            "Valid JSON with 2–3 ideas array (each with specific_change, why, assumption_tested, "
+            "tradeoff, second_order_effect, feasibility, validation), objective, and critique_anchor."
         ),
         agent=agent,
     )

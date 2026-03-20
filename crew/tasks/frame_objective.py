@@ -37,32 +37,51 @@ Constraints: {constraints if constraints else "None"}
 3. Is there a measurable outcome?
 4. Why now vs. next quarter?
 
-If any gate fails: name the gap. Stop. Do not proceed.
+If any gate fails:
+- Set "status": "fail"
+- Fill "gaps" with missing elements
+- Leave other fields empty
 
-If all gates pass: produce exactly 5 things:
+If all gates pass: produce JSON with status "pass":
+- strategic_frame (problem, user, outcome)
+- business_case (why this, why now)
+- assumptions (3–5 with risk level and falsifiers for HIGH)
+- constraints (non-negotiables only)
+- tradeoff (what we're NOT solving)
 
-1. **Frame** (one sentence each):
-   - Problem
-   - User
-   - Metric/outcome
+**CRITICAL:**
+- YOU MUST return valid JSON ONLY
+- No explanations, no markdown, no extra text
+- No preamble. No closing. JSON only."""
 
-2. **Why this, why now** (one sentence)
-
-3. **Ranked assumptions** (3–5, each tagged HIGH/MED/LOW):
-   For each HIGH: "Prove us wrong if [X]"
-
-4. **Hard constraints** (non-negotiable: time, tech, scope)
-
-5. **What we're NOT solving** (one trade-off)
-
-Write directly. No essay. No preamble. Just the 5 things."""
+    json_schema = """
+Output ONLY valid JSON (no markdown, no preamble):
+{
+  "status": "pass | fail",
+  "gaps": ["string"],
+  "strategic_frame": {
+    "problem": "string",
+    "user": "string",
+    "outcome": "string"
+  },
+  "business_case": "string",
+  "assumptions": [
+    {
+      "statement": "string",
+      "risk": "HIGH | MED | LOW",
+      "falsifier": "string (only if HIGH)"
+    }
+  ],
+  "constraints": ["string"],
+  "tradeoff": "string"
+}
+"""
 
     return Task(
-        description=description,
+        description=description + f"\n\n**OUTPUT FORMAT (JSON only):**\n{json_schema}",
         expected_output=(
-            "Frame. Business case. Ranked assumptions (HIGH/MED/LOW risk). "
-            "For each HIGH: one sentence on how we'd be wrong. "
-            "Hard constraints. One trade-off we're not solving for."
+            "Valid JSON with status, gaps (if any), strategic_frame, business_case, "
+            "assumptions array with risk levels and falsifiers, constraints, and tradeoff."
         ),
         agent=agent,
     )

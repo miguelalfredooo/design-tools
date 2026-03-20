@@ -31,13 +31,15 @@ const CarrierTextarea = React.forwardRef<
     <textarea
       ref={ref}
       onInput={handleInput}
+      style={{ wordWrap: "break-word", ...((props as any).style || {}) }}
       className={cn(
-        "w-full bg-transparent outline-none px-0 resize-none overflow-hidden break-words whitespace-pre-wrap line-clamp-none scrollbar-hide",
+        "w-full bg-transparent outline-none px-0 resize-none overflow-hidden scrollbar-hide",
         bordered ? "border border-border" : "border-none",
         `placeholder:text-muted-foreground/${placeholderOpacity}`,
         sizeClasses[designSize],
         className
       )}
+      wrap="soft"
       {...props}
     />
   );

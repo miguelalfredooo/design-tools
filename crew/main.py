@@ -89,12 +89,13 @@ async def run_crew(request: Request):
                 research_data,
             )
 
-            # Extract individual outputs (dict or fallback to string)
-            pm_output = result.get("pm_frame", result) if isinstance(result, dict) else result
-            research_output = result.get("research_synthesis", result) if isinstance(result, dict) else result
-            design_output = result.get("design_recommendation", result) if isinstance(result, dict) else result
+            # Extract individual outputs
+            pm_output = result.get("pm_frame")
+            research_output = result.get("research_synthesis")
+            design_output = result.get("design_recommendation")
+            stopped_at = result.get("stopped_at")
 
-            # PM Agent Output
+            # PM Agent Output (always included)
             yield {
                 "event": "agent_message",
                 "data": json.dumps({
@@ -109,35 +110,70 @@ async def run_crew(request: Request):
                 }),
             }
 
-            # Research & Insights Output
-            yield {
-                "event": "agent_message",
-                "data": json.dumps({
-                    "from": "research_insights",
-                    "from_name": "Research & Insights",
-                    "to": "product_designer" if stage != "discovery" else "product_manager",
-                    "subject": "Evidence synthesis",
-                    "priority": "high",
-                    "confidence": "medium",
-                    "body": research_output,
-                    "timestamp": datetime.now().isoformat(),
-                }),
-            }
+            # Check if gates failed
+            if stopped_at == "pm_gate_failed":
+                yield {
+                    "event": "run_stopped",
+                    "data": json.dumps({
+                        "run_id": run_id,
+                        "reason": "PM gate check failed",
+                        "gaps": pm_output.get("gaps", []),
+                        "timestamp": datetime.now().isoformat(),
+                    }),
+                }
+            elif stopped_at == "research_gate_failed":
+                # Include Research output before stopping
+                yield {
+                    "event": "agent_message",
+                    "data": json.dumps({
+                        "from": "research_insights",
+                        "from_name": "Research & Insights",
+                        "to": "product_designer",
+                        "subject": "Evidence synthesis",
+                        "priority": "high",
+                        "confidence": "medium",
+                        "body": research_output,
+                        "timestamp": datetime.now().isoformat(),
+                    }),
+                }
+                yield {
+                    "event": "run_stopped",
+                    "data": json.dumps({
+                        "run_id": run_id,
+                        "reason": "Research could not identify highest-risk assumption",
+                        "timestamp": datetime.now().isoformat(),
+                    }),
+                }
+            else:
+                # Full handoff: Research output
+                yield {
+                    "event": "agent_message",
+                    "data": json.dumps({
+                        "from": "research_insights",
+                        "from_name": "Research & Insights",
+                        "to": "product_designer",
+                        "subject": "Evidence synthesis",
+                        "priority": "high",
+                        "confidence": "medium",
+                        "body": research_output,
+                        "timestamp": datetime.now().isoformat(),
+                    }),
+                }
 
-            # Design Output (always included)
-            yield {
-                "event": "agent_message",
-                "data": json.dumps({
-                    "from": "product_designer",
-                    "from_name": "Product Designer",
-                    "to": "product_manager",
-                    "subject": "Design recommendation" if stage != "discovery" else "Design direction",
-                    "priority": "high",
-                    "confidence": "medium",
-                    "body": design_output,
-                    "timestamp": datetime.now().isoformat(),
-                }),
-            }
+                # Design Output (only if gates passed)
+                yield {
+                    "event": "agent_message",
+                    "data": json.dumps({
+                        "from": "product_designer",
+                        "from_name": "Product Designer",
+                        "to": "product_manager",
+                        "subject": "Design recommendation" if stage != "discovery" else "Design direction",
+                        "priority": "high",
+                        "confidence": "medium",
+                        "body": design_output,
+                        "timestamp": datetime.now().isoformat(),
+                    }),
+                }
 
             # Completion
             yield {

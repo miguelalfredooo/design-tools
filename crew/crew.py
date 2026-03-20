@@ -6,11 +6,13 @@ try:
     from .agents import create_pm, create_research_insights, create_product_design
     from .tasks import create_frame_objective_task, create_synthesize_task, create_recommend_solution_task
     from .tools import fetch_evidence
+    from .schemas import parse_and_validate_pm, parse_and_validate_research, parse_and_validate_design
 except ImportError:
     # When running standalone with uvicorn
     from agents import create_pm, create_research_insights, create_product_design
     from tasks import create_frame_objective_task, create_synthesize_task, create_recommend_solution_task
     from tools import fetch_evidence
+    from schemas import parse_and_validate_pm, parse_and_validate_research, parse_and_validate_design
 
 
 def get_llm() -> LLM:
@@ -65,11 +67,28 @@ def run_crew(
         process=Process.sequential,
         verbose=True,
     )
-    pm_output = str(pm_crew.kickoff())
+    pm_output_raw = str(pm_crew.kickoff())
+
+    # Parse and validate PM output
+    try:
+        pm_output = parse_and_validate_pm(pm_output_raw)
+    except Exception as e:
+        raise ValueError(f"PM output validation failed: {str(e)}")
+
+    # GATE 1: Check if PM passed gates
+    if pm_output.get("status") == "fail":
+        print(f"\n⚠️  PM GATE FAILED. Stopping crew.\nGaps: {pm_output.get('gaps', [])}\n")
+        return {
+            "pm_frame": pm_output,
+            "research_synthesis": None,
+            "design_recommendation": None,
+            "stopped_at": "pm_gate_failed",
+        }
 
     # STEP 2: Research pressure-tests PM's output
+    # Pass ONLY assumptions array to Research
     research_context = base_context.copy()
-    research_context["pm_output"] = pm_output  # Pass PM output to Research
+    research_context["pm_assumptions"] = pm_output.get("assumptions", [])
     research_task = create_synthesize_task(research_agent, research_context)
     research_crew = Crew(
         agents=[research_agent],
@@ -77,11 +96,29 @@ def run_crew(
         process=Process.sequential,
         verbose=True,
     )
-    research_output = str(research_crew.kickoff())
+    research_output_raw = str(research_crew.kickoff())
+
+    # Parse and validate Research output
+    try:
+        research_output = parse_and_validate_research(research_output_raw)
+    except Exception as e:
+        raise ValueError(f"Research output validation failed: {str(e)}")
+
+    # GATE 2: Check if Research identified highest-risk assumption
+    highest_risk = research_output.get("highest_risk_assumption", "").strip()
+    if not highest_risk:
+        print(f"\n⚠️  RESEARCH GATE FAILED: No highest-risk assumption identified. Stopping crew.\n")
+        return {
+            "pm_frame": pm_output,
+            "research_synthesis": research_output,
+            "design_recommendation": None,
+            "stopped_at": "research_gate_failed",
+        }
 
     # STEP 3: Designer proposes ideas to validate highest-risk assumption
+    # Pass ONLY highest_risk_assumption to Designer
     design_context = base_context.copy()
-    design_context["research_output"] = research_output  # Pass Research output to Designer
+    design_context["highest_risk_assumption"] = highest_risk
     design_task = create_recommend_solution_task(design_agent, design_context)
     design_crew = Crew(
         agents=[design_agent],
@@ -89,14 +126,20 @@ def run_crew(
         process=Process.sequential,
         verbose=True,
     )
-    design_output = str(design_crew.kickoff())
+    design_output_raw = str(design_crew.kickoff())
+
+    # Parse and validate Design output
+    try:
+        design_output = parse_and_validate_design(design_output_raw)
+    except Exception as e:
+        raise ValueError(f"Design output validation failed: {str(e)}")
 
     # Return individual outputs
     return {
         "pm_frame": pm_output,
         "research_synthesis": research_output,
         "design_recommendation": design_output,
-        "full_output": f"PM:\n{pm_output}\n\nRESEARCH:\n{research_output}\n\nDESIGN:\n{design_output}"
+        "stopped_at": None,
     }
 
 

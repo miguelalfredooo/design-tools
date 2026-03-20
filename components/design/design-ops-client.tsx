@@ -56,7 +56,7 @@ export function DesignOpsClient() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-4xl">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black tracking-tight">Design Ops</h1>
@@ -69,17 +69,16 @@ export function DesignOpsClient() {
       <div className="space-y-6">
         {/* Title & Description */}
         <div className="space-y-3">
-          <CarrierTextarea
+          <CarrierInput
             placeholder="Session title..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             designSize="lg"
             className="font-bold tracking-tight"
-            rows={2}
           />
           <CarrierTextarea
             placeholder="Brief description for voters..."
-            rows={1}
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="text-muted-foreground"
