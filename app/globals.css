@@ -193,6 +193,20 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Form input wrapping */
+  input[type="text"],
+  input[type="email"],
+  input[type="url"],
+  textarea {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  textarea {
+    white-space: pre-wrap;
+  }
 }
 
 /* Hide scrollbar but keep scrolling */

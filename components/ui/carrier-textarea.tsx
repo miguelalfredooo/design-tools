@@ -32,7 +32,7 @@ const CarrierTextarea = React.forwardRef<
       ref={ref}
       onInput={handleInput}
       className={cn(
-        "w-full bg-transparent outline-none px-0 resize-none overflow-hidden",
+        "w-full bg-transparent outline-none px-0 resize-none overflow-hidden break-words whitespace-pre-wrap",
         bordered ? "border border-border" : "border-none",
         `placeholder:text-muted-foreground/${placeholderOpacity}`,
         sizeClasses[designSize],
