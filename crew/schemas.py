@@ -43,19 +43,21 @@ def validate_pm_output(data: Dict[str, Any]) -> Dict[str, Any]:
     if data["status"] == "fail" and "gaps" not in data:
         raise ValueError("status=fail requires 'gaps' array")
 
-    # Validate strategic_frame
-    for key in ["problem", "user", "outcome"]:
-        if key not in data["strategic_frame"]:
-            raise ValueError(f"Missing strategic_frame.{key}")
+    # Only validate content fields if status is "pass"
+    if data["status"] == "pass":
+        # Validate strategic_frame
+        for key in ["problem", "user", "outcome"]:
+            if key not in data["strategic_frame"]:
+                raise ValueError(f"Missing strategic_frame.{key}")
 
-    # Validate assumptions
-    for i, assumption in enumerate(data["assumptions"]):
-        if "statement" not in assumption or "risk" not in assumption:
-            raise ValueError(f"Assumption {i} missing statement or risk")
-        if assumption["risk"] not in ["HIGH", "MED", "LOW"]:
-            raise ValueError(f"Assumption {i} has invalid risk level: {assumption['risk']}")
-        if assumption["risk"] == "HIGH" and "falsifier" not in assumption:
-            raise ValueError(f"HIGH risk assumption {i} missing falsifier")
+        # Validate assumptions
+        for i, assumption in enumerate(data["assumptions"]):
+            if "statement" not in assumption or "risk" not in assumption:
+                raise ValueError(f"Assumption {i} missing statement or risk")
+            if assumption["risk"] not in ["HIGH", "MED", "LOW"]:
+                raise ValueError(f"Assumption {i} has invalid risk level: {assumption['risk']}")
+            if assumption["risk"] == "HIGH" and "falsifier" not in assumption:
+                raise ValueError(f"HIGH risk assumption {i} missing falsifier")
 
     return data
 

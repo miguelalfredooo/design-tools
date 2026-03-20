@@ -18,7 +18,12 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
 
     constraint_str = ""
     if constraints:
-        constraint_str = "Hard constraints: " + ", ".join(f"{k}={v}" for k, v in constraints.items())
+        if isinstance(constraints, dict):
+            constraint_str = "Hard constraints: " + ", ".join(f"{k}={v}" for k, v in constraints.items())
+        elif isinstance(constraints, list):
+            constraint_str = "Hard constraints: " + ", ".join(constraints)
+        else:
+            constraint_str = f"Hard constraints: {constraints}"
 
     description = f"""You are a Product Designer. Propose 2-3 ideas to test this assumption.
 
