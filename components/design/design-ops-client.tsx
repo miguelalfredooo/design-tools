@@ -57,11 +57,11 @@ export function DesignOpsClient() {
   const populateSampleData = () => {
     setTitle("Raptive Creator Engagement");
     setDescription("Testing the iteration loop with creator engagement problem space");
-    setProblem("Creators are underengaged — no visibility into what's working, no tools to maintain presence efficiently.");
+    setProblem("Creators average 1.8 posts/month vs. 3.2x on comparable platforms. 38% of active creators are underengaged (under 2 posts/month, under 20% comment response rate). Exit surveys show 61% don't know what to post or when, 29% find monitoring too time-consuming. No current tools exist for scheduling, analytics, or engagement signals.");
     setGoal("Increase consistent posting frequency, boost engagement metrics, and grow pageviews among our creator community.");
-    setAudience("Mid-tier content creators (10k-100k followers) on Raptive Community Platform who rely on consistent presence");
-    setMetric("Posting frequency (posts/week), engagement rate (comments + shares), pageview growth month-over-month");
-    setConstraints("Must integrate with existing Raptive dashboard, no external tool dependencies, launch within Q2.");
+    setAudience("Mid-tier creators (10k–100k followers) on Raptive Community — 67% of total pageviews but only 34% of posting volume. Highest leverage cohort. Includes team members who manage creator presence on their behalf.");
+    setMetric("Posting frequency baseline 1.8 → target 2.25 posts/month (+25%). Engagement rate 2.1% → target 3.1%. Pageviews per session +10% vs. pre-launch. Measured 90 days post-launch.");
+    setConstraints("MVP must use existing Discourse features. Legal review pending on behavioral data. Team posts require visible attribution. Conservative prompt defaults — no aggressive notification cadence.");
   };
 
   if (!isAdmin) {
