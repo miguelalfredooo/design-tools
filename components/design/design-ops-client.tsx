@@ -152,7 +152,14 @@ export function DesignOpsClient() {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
-                        Describe the specific user pain point with concrete details. Avoid vague terms. Example: "Creators struggle to maintain posting frequency because manual content scheduling across platforms is time-consuming."
+                        <div className="space-y-1 text-xs">
+                          <p className="font-semibold">A strong problem has:</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            <li><span className="font-semibold">Who:</span> specific user type</li>
+                            <li><span className="font-semibold">What:</span> concrete pain point</li>
+                            <li><span className="font-semibold">Why:</span> impact or friction</li>
+                          </ul>
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   </div>
