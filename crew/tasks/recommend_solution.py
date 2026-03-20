@@ -18,9 +18,14 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
     if constraints:
         constraint_str = "Hard constraints: " + ", ".join(f"{k}={v}" for k, v in constraints.items())
 
+    research_output = context.get("research_output", "")
+
     description = f"""You are a Product Designer. Propose 2-3 ideas to test the highest-risk assumption.
 
-**Input:**
+**Research's pressure-test:**
+{research_output}
+
+**Your constraints:**
 Problem: {problem}
 Metric: {metric}
 User segment: {user_segment}

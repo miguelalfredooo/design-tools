@@ -38,17 +38,17 @@ export function SessionBrief({ session }: SessionBriefProps) {
         />
       </button>
       {expanded && (
-        <div className="grid gap-3 mt-2 grid-cols-1 sm:grid-cols-2 w-full">
+        <div className="grid gap-3 mt-2 grid-cols-1 md:grid-cols-2 w-full">
           {briefFields.map(({ key, label, icon: Icon }) => {
             const value = session[key];
             if (!value) return null;
             return (
-              <div key={key} className="space-y-1">
+              <div key={key} className="space-y-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <Icon className="size-3" />
                   {label}
                 </div>
-                <p className="text-sm">{value}</p>
+                <p className="text-sm break-words whitespace-normal">{value}</p>
               </div>
             );
           })}

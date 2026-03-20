@@ -20,7 +20,7 @@ const CarrierInput = React.forwardRef<HTMLInputElement, CarrierInputProps>(
       <input
         ref={ref}
         className={cn(
-          "w-full bg-transparent outline-none px-0 h-auto overflow-hidden text-ellipsis",
+          "w-full bg-transparent outline-none px-0 h-auto overflow-visible whitespace-normal break-words",
           bordered ? "border border-border" : "border-none",
           `placeholder:text-muted-foreground/${placeholderOpacity}`,
           sizeClasses[designSize],

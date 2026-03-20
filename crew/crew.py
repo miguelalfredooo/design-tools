@@ -31,20 +31,10 @@ def run_crew(
     metric: Optional[str] = None,
     constraints: Optional[dict] = None,
     research_data: Optional[dict] = None,
-) -> str:
+) -> dict:
     """
-    Run the three-agent crew with modular inputs.
-
-    Args:
-        stage: 'discovery', 'validation', 'solution', or 'optimization'
-        synthesis_tier: 'quick', 'balanced' (default), or 'in-depth'
-        problem_statement: The problem we're solving
-        objective: The business objective
-        hypothesis: What we're testing
-        user_segment: Who we're solving for
-        metric: What we're measuring
-        constraints: Timeline, technical, budget, scope
-        research_data: Dict with 'snowflake_results', 'surveys', 'prototypes_tested', 'images', etc.
+    Run three-agent handoff: PM → Research → Designer.
+    Each agent reads the previous agent's output.
     """
     llm = get_llm()
 
@@ -53,8 +43,8 @@ def run_crew(
     research_agent = create_research_insights(llm, tools=[fetch_evidence])
     design_agent = create_product_design(llm)
 
-    # Build context from inputs
-    context = {
+    # Build base context
+    base_context = {
         "stage": stage,
         "synthesis_tier": synthesis_tier,
         "problem_statement": problem_statement,
@@ -66,53 +56,48 @@ def run_crew(
         "research_data": research_data or {},
     }
 
-    # Build tasks based on stage
-    tasks = []
-
-    # PM always frames (if we have context to frame)
-    if any([objective, problem_statement, metric, constraints]):
-        frame_task = create_frame_objective_task(pm_agent, context)
-        tasks.append(frame_task)
-
-    # Research always synthesizes
-    synth_task = create_synthesize_task(research_agent, context)
-    tasks.append(synth_task)
-
-    # Design always recommends (stage-specific framing)
-    recommend_task = create_recommend_solution_task(design_agent, context)
-    tasks.append(recommend_task)
-
-    # Build crew with all three agents
-    agents = [pm_agent, research_agent, design_agent]
-
-    crew = Crew(
-        agents=agents,
-        tasks=tasks,
+    # STEP 1: PM frames and surfaces assumptions
+    pm_context = base_context.copy()
+    pm_task = create_frame_objective_task(pm_agent, pm_context)
+    pm_crew = Crew(
+        agents=[pm_agent],
+        tasks=[pm_task],
         process=Process.sequential,
         verbose=True,
     )
+    pm_output = str(pm_crew.kickoff())
 
-    # Execute and capture individual task outputs
-    result = crew.kickoff()
+    # STEP 2: Research pressure-tests PM's output
+    research_context = base_context.copy()
+    research_context["pm_output"] = pm_output  # Pass PM output to Research
+    research_task = create_synthesize_task(research_agent, research_context)
+    research_crew = Crew(
+        agents=[research_agent],
+        tasks=[research_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    research_output = str(research_crew.kickoff())
 
-    # Return structured output with individual agent results
-    output = {
-        "pm_frame": "",
-        "research_synthesis": "",
-        "design_recommendation": "",
-        "full_output": str(result)
+    # STEP 3: Designer proposes ideas to validate highest-risk assumption
+    design_context = base_context.copy()
+    design_context["research_output"] = research_output  # Pass Research output to Designer
+    design_task = create_recommend_solution_task(design_agent, design_context)
+    design_crew = Crew(
+        agents=[design_agent],
+        tasks=[design_task],
+        process=Process.sequential,
+        verbose=True,
+    )
+    design_output = str(design_crew.kickoff())
+
+    # Return individual outputs
+    return {
+        "pm_frame": pm_output,
+        "research_synthesis": research_output,
+        "design_recommendation": design_output,
+        "full_output": f"PM:\n{pm_output}\n\nRESEARCH:\n{research_output}\n\nDESIGN:\n{design_output}"
     }
-
-    # Crew produces one combined output - each agent contributes their perspective
-    # The prompts are designed so each agent has distinct voice and focus
-    result_str = str(result) if result else ""
-
-    # For now: return full output. Each agent's prompt ensures distinct contribution.
-    output["pm_frame"] = result_str
-    output["research_synthesis"] = result_str
-    output["design_recommendation"] = result_str
-
-    return output
 
 
 if __name__ == "__main__":
