@@ -71,7 +71,11 @@ export function DesignOpsCrewRunner({
       const res = await fetch("/api/design-ops/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), objectives: selected, synthesis_tier: synthesisT }),
+        body: JSON.stringify({
+          problem_statement: prompt.trim(),
+          synthesis_tier: synthesisT,
+          constraints: selected.map(o => `${o.title}: ${o.metric} → ${o.target}`),
+        }),
       });
 
       if (!res.ok) {
