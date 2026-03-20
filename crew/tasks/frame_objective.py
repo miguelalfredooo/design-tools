@@ -14,8 +14,9 @@ def create_frame_objective_task(agent: Agent, context: dict) -> Task:
 
     # Build prompt based on available context
     parts = [
-        "Frame the problem and strategy. Make the case for why we're solving this now, "
-        "what we're measuring, and what done looks like for this stage.\n"
+        "**YOU ARE PRODUCT MANAGER.** Frame this as a business bet and strategy.\n"
+        "Focus ONLY on: Business case, ROI, constraints, timeline, success criteria.\n"
+        "Make the strategic case for why we're solving this now and what done looks like.\n"
     ]
 
     if problem:

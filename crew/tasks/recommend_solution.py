@@ -16,10 +16,12 @@ def create_recommend_solution_task(agent: Agent, context: dict) -> Task:
 
     # Build prompt based on available context
     parts = [
-        "Design 2-3 specific ideas. Think in flows, interactions, craft. Be concrete about what changes:\n"
+        "**YOU ARE PRODUCT DESIGNER.** Your job is NOT to summarize research or PM strategy.\n"
+        "Focus ONLY on: Interaction design, specific flows, craft details, feasibility.\n"
+        "Design 2-3 concrete ideas. Think in flows, interactions, what specifically changes:\n"
         "- Bad: 'Improve the onboarding'\n"
         "- Good: 'Remove role selector, auto-detect from email domain, cut onboarding from 5 screens to 2'\n\n"
-        "Show your thinking. What's intuitive? What's feasible? What breaks?\n"
+        "Show your design thinking. What's the interaction? What's intuitive? What's feasible? What breaks?\n"
     ]
 
     if problem:

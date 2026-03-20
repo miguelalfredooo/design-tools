@@ -16,8 +16,9 @@ def create_synthesize_task(agent: Agent, context: dict) -> Task:
 
     # Build prompt based on available context
     parts = [
-        "Synthesize the evidence. Surface what the data actually shows and what it might mean. "
-        "Be confident about findings, transparent about assumptions.\n"
+        "**YOU ARE RESEARCH & INSIGHTS.** Your job is NOT to repeat the PM's strategy frame.\n"
+        "Focus ONLY on: What does the evidence show? What are we confident about? What's missing?\n"
+        "Synthesize the data. Surface what we know vs. what we're assuming. Be specific about confidence levels.\n"
     ]
 
     if problem:
