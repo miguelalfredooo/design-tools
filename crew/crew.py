@@ -104,27 +104,33 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Example 1: Discovery phase with minimal input
+    # RAPTIVE CREATORS TEST CASE
     result = run_crew(
         stage="discovery",
-        problem_statement="Users struggle to find relevant products in search",
-        user_segment="Mobile users, first-time visitors",
+        problem_statement=(
+            "Creators are underengaged — no visibility into what's working, no tools to maintain presence efficiently. "
+            "Reader retention and pageview revenue suffer when creators go silent."
+        ),
+        objective=(
+            "Give creators visibility and control so the community becomes a place they're invested in — "
+            "driving consistent posting, meaningful engagement, and measurable pageview lift."
+        ),
+        user_segment="Content creators on Raptive Community + their team members who manage presence on their behalf",
+        metric="Consistent posting frequency + community engagement + pageview growth",
+        constraints={
+            "legal_review": "Behavioral data needs legal review",
+            "authenticity": "Attribution of creator actions non-negotiable",
+            "advertiser": "No advertiser conflicts",
+            "defaults": "Conservative prompt defaults",
+            "research": "6–8 creator interviews required before sprint"
+        },
     )
-    print("\n=== DISCOVERY RESULT ===")
-    print(result)
-
-    # Example 2: Solution phase with full context
-    # result = run_crew(
-    #     stage="solution",
-    #     problem_statement="Users abandon checkout at payment step",
-    #     objective="Improve checkout conversion to 80%",
-    #     metric="Checkout completion rate",
-    #     constraints={"timeline": "4 weeks", "technical": "Payment provider limitation"},
-    #     research_data={
-    #         "snowflake_results": "18% drop-off at payment step",
-    #         "survey_responses": "Users report 'too many fields'",
-    #         "prototypes_tested": [{"name": "Auto-fill form", "votes": 9}],
-    #     },
-    # )
-    # print("\n=== SOLUTION RESULT ===")
-    # print(result)
+    print("\n=== RAPTIVE CREATORS BRIEF ===")
+    print("PM OUTPUT:")
+    print(result["pm_frame"])
+    print("\n" + "="*80 + "\n")
+    print("RESEARCH OUTPUT:")
+    print(result["research_synthesis"])
+    print("\n" + "="*80 + "\n")
+    print("DESIGN OUTPUT:")
+    print(result["design_recommendation"])
