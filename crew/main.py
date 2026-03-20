@@ -124,21 +124,20 @@ async def run_crew(request: Request):
                 }),
             }
 
-            # Design Output (if not discovery)
-            if stage != "discovery":
-                yield {
-                    "event": "agent_message",
-                    "data": json.dumps({
-                        "from": "product_designer",
-                        "from_name": "Product Designer",
-                        "to": "product_manager",
-                        "subject": "Design recommendation",
-                        "priority": "high",
-                        "confidence": "medium",
-                        "body": design_output,
-                        "timestamp": datetime.now().isoformat(),
-                    }),
-                }
+            # Design Output (always included)
+            yield {
+                "event": "agent_message",
+                "data": json.dumps({
+                    "from": "product_designer",
+                    "from_name": "Product Designer",
+                    "to": "product_manager",
+                    "subject": "Design recommendation" if stage != "discovery" else "Design direction",
+                    "priority": "high",
+                    "confidence": "medium",
+                    "body": design_output,
+                    "timestamp": datetime.now().isoformat(),
+                }),
+            }
 
             # Completion
             yield {

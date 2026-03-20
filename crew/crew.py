@@ -78,15 +78,12 @@ def run_crew(
     synth_task = create_synthesize_task(research_agent, context)
     tasks.append(synth_task)
 
-    # Design proposes solutions (except in discovery)
-    if stage != "discovery":
-        recommend_task = create_recommend_solution_task(design_agent, context)
-        tasks.append(recommend_task)
+    # Design always recommends (stage-specific framing)
+    recommend_task = create_recommend_solution_task(design_agent, context)
+    tasks.append(recommend_task)
 
-    # Build crew with available agents and tasks
-    agents = [pm_agent, research_agent]
-    if stage != "discovery":
-        agents.append(design_agent)
+    # Build crew with all three agents
+    agents = [pm_agent, research_agent, design_agent]
 
     crew = Crew(
         agents=agents,
