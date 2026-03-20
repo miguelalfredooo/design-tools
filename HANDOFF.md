@@ -18,14 +18,35 @@ All 11 implementation tasks completed:
 10. ✅ Data parsers
 11. ✅ Integration tests
 
+## Prerequisites
+
+**Python Version:** CrewAI requires Python ≤3.13 (NOT 3.14+)
+- Install: `brew install python@3.13`
+- Verify: `python3.13 --version` (should be 3.13.x)
+
+## Setup (One-time)
+
+```bash
+# 1. Create venv with Python 3.13
+python3.13 -m venv crew_venv
+
+# 2. Install dependencies
+source crew_venv/bin/activate
+pip install --upgrade pip
+pip install -r crew/requirements.txt
+
+# 3. Verify installation
+python -c "import crewai; print('✅ crewai ready')"
+```
+
 ## Running Services
 
 ```bash
-# Frontend (port 3500)
+# Frontend (port 3500) - from project root
 cd /Users/miguelarias/Code/design-tools
 npm run dev
 
-# Crew API (port 8000) - USE THIS:
+# Crew API (port 8000) - from project root
 source $HOME/.cargo/env
 source crew_venv/bin/activate
 ANTHROPIC_API_KEY="<use your own key>"

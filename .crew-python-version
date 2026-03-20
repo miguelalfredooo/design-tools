@@ -1,0 +1,4 @@
+3.13.12
+# CrewAI requires Python ≤3.13
+# Install with: brew install python@3.13
+# Or use this version with pyenv if available
