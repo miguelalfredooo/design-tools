@@ -106,11 +106,11 @@ def run_crew(
     # Extract crew result as string
     result_str = str(result) if result else ""
 
-    # For now, use the full crew output for both pm_frame and research_synthesis
-    # The crew produces a complete synthesis that includes both strategic framing and evidence
-    # The frontend will display both cards with this content
+    # Use the full crew output for all cards
+    # The crew produces comprehensive output covering PM strategy, research synthesis, and design direction
     output["pm_frame"] = result_str
     output["research_synthesis"] = result_str
+    output["design_recommendation"] = result_str
 
     return output
 
