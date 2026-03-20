@@ -113,7 +113,7 @@ export function DesignOpsClient() {
             designSize="lg"
             className="font-bold tracking-tight"
           />
-          <CarrierTextarea
+          <Textarea
             placeholder="Brief description for voters..."
             rows={3}
             value={description}
@@ -156,21 +156,19 @@ export function DesignOpsClient() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <CarrierTextarea
+                  <Textarea
                     placeholder="What problem does this solve?"
                     value={problem}
                     onChange={(e) => setProblem(e.target.value)}
-                    designSize="sm"
                     rows={3}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Goal</div>
-                  <CarrierTextarea
+                  <Textarea
                     placeholder="What's the desired outcome?"
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
-                    designSize="sm"
                     rows={3}
                   />
                 </div>
@@ -181,32 +179,29 @@ export function DesignOpsClient() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <div className="text-sm font-semibold text-foreground">Audience</div>
-                    <CarrierTextarea
+                    <Textarea
                       placeholder="Who is this for?"
                       value={audience}
                       onChange={(e) => setAudience(e.target.value)}
-                      designSize="sm"
                       rows={3}
                     />
                   </div>
                   <div className="space-y-1.5">
                     <div className="text-sm font-semibold text-foreground">Metric</div>
-                    <CarrierTextarea
+                    <Textarea
                       placeholder="How do we measure success?"
                       value={metric}
                       onChange={(e) => setMetric(e.target.value)}
-                      designSize="sm"
                       rows={3}
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-foreground">Constraints</div>
-                  <CarrierTextarea
+                  <Textarea
                     placeholder="Any limitations?"
                     value={constraints}
                     onChange={(e) => setConstraints(e.target.value)}
-                    designSize="sm"
                     rows={3}
                   />
                 </div>

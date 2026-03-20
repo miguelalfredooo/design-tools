@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "@/lib/design-store";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { DesignNav } from "@/components/design/design-nav";
 import { DesignSidebar } from "@/components/design/design-sidebar";
@@ -54,8 +55,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <SessionProvider>
-        <UserNameGate>
+      <TooltipProvider>
+        <SessionProvider>
+          <UserNameGate>
           <Suspense>
             <DesignNav />
           </Suspense>
@@ -72,6 +74,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <Toaster />
         </UserNameGate>
       </SessionProvider>
+      </TooltipProvider>
     </ThemeProvider>
   );
 }
