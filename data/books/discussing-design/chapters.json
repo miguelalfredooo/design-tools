@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ch-1-foundations-of-critique",
+    "title": "Foundations of Critique",
+    "summary": "Critique is a structured process for gathering feedback that separates the work from the person, creating psychological safety where designers can receive honest input without feeling personally attacked.",
+    "keyQuotes": [
+      "Critique is not criticism of the person, but feedback on the work.",
+      "The best critiques balance honesty with kindness.",
+      "A good critique framework prevents design discussions from becoming personal conflicts."
+    ],
+    "excerpt": "Effective critique begins with a fundamental distinction: the work is not the person. When designers understand this separation, they become open to feedback. Many design conversations go wrong because comments feel like personal judgments. 'I don't like your color choice' can sound like 'you have bad taste.' A critique framework changes this dynamic by establishing that we are evaluating solutions, not people. This psychological safety is foundational. Facilitators play a critical role in maintaining it. They must redirect personal comments back to the work, manage group dynamics so introverts and extroverts both contribute equally, and ensure that quieter voices are heard. When a team believes that critique is about improving the design—not scoring points or proving someone wrong—they engage more authentically. They ask follow-up questions instead of defending. They propose alternatives instead of attacking proposals. This shift from threat-response to collaborative problem-solving is where the real value of structured critique emerges. Without this framework, teams often fragment: dominant voices drive decisions while others withdraw, leading to missed insights and resentment. In contrast, psychologically safe teams move faster because they share information freely, test ideas without fear of ridicule, and build on each other's thinking. The facilitator's consistent attention to both the content and the emotional climate establishes norms that eventually become self-sustaining. Over time, team members internalize these values and hold each other accountable, making the critique process more efficient and genuinely collaborative.",
+    "keywords": ["critique", "feedback", "psychological safety", "facilitator", "communication", "design process"]
+  },
+  {
+    "id": "ch-2-feedback-delivery",
+    "title": "Delivering Feedback Effectively",
+    "summary": "Effective feedback is specific, observation-based, and grounded in design principles rather than personal preference. It describes what you see rather than what you think, making it actionable rather than defensive.",
+    "keyQuotes": [
+      "Opinion dressed as observation is still opinion.",
+      "The best feedback describes what you see, not what you think.",
+      "Ask 'Why?' to surface the reasoning behind design decisions."
+    ],
+    "excerpt": "Many design critiques derail because feedback is framed as opinion. 'I don't like this button' or 'This feels cluttered' invites defensiveness. Instead, skilled critics describe what they observe: 'The button color has insufficient contrast on mobile screens' or 'The spacing is inconsistent with the design system, which might confuse users.' Observation-based feedback is harder to dismiss because it's grounded in evidence or principle. The designer can engage with the observation—'What contrast ratio are you seeing?'—rather than defend their taste. This shift from subjective to objective feedback also reveals the reasoning. When you ask a designer 'Why did you choose this approach?', you often discover the constraint or principle that guided them. Understanding the 'why' leads to better feedback: 'I see you prioritized simplicity here. Given that 40% of our users have accessibility needs, should we add a fallback for...?' This shows respect for their decision-making while opening space for refinement. The most effective feedback combines observation with curiosity. Instead of prescribing solutions, skilled facilitators frame observations as questions: 'I notice the mobile layout is quite dense. What would happen if we increased vertical spacing?' This approach invites the designer to participate in problem-solving rather than feel judged. Over time, designers internalize this pattern and begin critiquing their own work with the same rigor, which significantly accelerates iteration and reduces the back-and-forth that stalls projects.",
+    "keywords": ["feedback", "observation", "specific", "actionable", "evidence-based", "principles"]
+  }
+]
