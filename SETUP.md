@@ -111,6 +111,26 @@ curl -X POST http://localhost:3500/api/articulate \
 - Use direnv (see step 2 above)
 - Or manually source: `source .env.local`
 
+### "ANTHROPIC_API_KEY not set" when running tsx scripts
+
+Some scripts (like `npm run test:transmitter`) run via tsx/Node.js and don't auto-inherit direnv env vars. Solution:
+
+```bash
+# Export API key before running the script
+export ANTHROPIC_API_KEY=$(grep "^ANTHROPIC_API_KEY=" .env.local | cut -d'=' -f2)
+npm run test:transmitter
+```
+
+Or create a helper function in `~/.zshrc`:
+```bash
+run-with-env() {
+  eval $(grep = .env.local | sed 's/^/export /')
+  "$@"
+}
+
+# Then use: run-with-env npm run test:transmitter
+```
+
 ## Security Best Practices
 
 ✅ **DO:**
