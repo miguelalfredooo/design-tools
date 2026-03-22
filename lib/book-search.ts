@@ -1,14 +1,14 @@
 // lib/book-search.ts
 
 import { BookSearchResult, BookIndex } from "./book-types";
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 
 /**
  * Load all book indexes from /data/books/
  * Each book's index is at /data/books/{bookId}/chapters.json
  */
-function loadAllBooks(): BookIndex[] {
+export function loadAllBooks(): BookIndex[] {
   const booksDir = path.join(process.cwd(), "data", "books");
 
   if (!fs.existsSync(booksDir)) {
@@ -54,7 +54,7 @@ export function extractKeywords(text: string): string[] {
  * Calculate relevance score between query keywords and chapter keywords
  * Simple approach: count keyword overlaps
  */
-function calculateRelevance(queryKeywords: string[], chapterKeywords: string[]): number {
+export function calculateRelevance(queryKeywords: string[], chapterKeywords: string[]): number {
   if (chapterKeywords.length === 0) return 0;
 
   const matches = queryKeywords.filter(q =>
