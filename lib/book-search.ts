@@ -15,26 +15,38 @@ export function loadAllBooks(): BookIndex[] {
     return [];
   }
 
-  const bookFolders = fs.readdirSync(booksDir).filter(f => {
-    const stat = fs.statSync(path.join(booksDir, f));
-    return stat.isDirectory();
-  });
+  const bookFolders = fs
+    .readdirSync(booksDir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name);
 
   const books: BookIndex[] = [];
 
   for (const folder of bookFolders) {
-    try {
-      const metaPath = path.join(booksDir, folder, "metadata.json");
-      const chaptersPath = path.join(booksDir, folder, "chapters.json");
+    const metaPath = path.join(booksDir, folder, "metadata.json");
+    const chaptersPath = path.join(booksDir, folder, "chapters.json");
 
-      if (fs.existsSync(metaPath) && fs.existsSync(chaptersPath)) {
-        const metadata = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-        const chapters = JSON.parse(fs.readFileSync(chaptersPath, "utf-8"));
-        books.push({ metadata, chapters });
-      }
-    } catch (err) {
-      console.warn(`Failed to load book from ${folder}:`, err);
+    if (!fs.existsSync(metaPath) || !fs.existsSync(chaptersPath)) {
+      continue;
     }
+
+    let metadata;
+    try {
+      metadata = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+    } catch (err) {
+      console.warn(`Failed to parse metadata.json from ${folder}:`, err);
+      continue;
+    }
+
+    let chapters;
+    try {
+      chapters = JSON.parse(fs.readFileSync(chaptersPath, "utf-8"));
+    } catch (err) {
+      console.warn(`Failed to parse chapters.json from ${folder}:`, err);
+      continue;
+    }
+
+    books.push({ metadata, chapters });
   }
 
   return books;
@@ -52,14 +64,26 @@ export function extractKeywords(text: string): string[] {
 
 /**
  * Calculate relevance score between query keywords and chapter keywords
- * Simple approach: count keyword overlaps
+ * Uses word-boundary matching to avoid false positives (e.g., "stat" matching "statements")
  */
 export function calculateRelevance(queryKeywords: string[], chapterKeywords: string[]): number {
   if (chapterKeywords.length === 0) return 0;
 
-  const matches = queryKeywords.filter(q =>
-    chapterKeywords.some(c => c.includes(q) || q.includes(c))
-  );
+  const matches = queryKeywords.filter(q => {
+    // Check if query keyword matches any chapter keyword exactly or as a complete word
+    return chapterKeywords.some(c => {
+      // Exact match is strongest
+      if (c === q) return true;
+
+      // Check if q is a whole word within c (word-boundary matching)
+      // Split by non-alphanumeric to find word boundaries
+      const cWords = c.split(/[^a-z0-9]+/);
+      const qWords = q.split(/[^a-z0-9]+/);
+
+      // All words from q must exist in c
+      return qWords.every(qWord => qWord && cWords.includes(qWord));
+    });
+  });
 
   return matches.length;
 }
