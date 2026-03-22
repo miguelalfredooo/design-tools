@@ -1,6 +1,6 @@
 # Transmitter Quality Test Results
 
-**Date**: [TEST_DATE]
+**Date**: 2026-03-22
 **Test Script**: `npm run test:transmitter`
 **Test Sample Size**: 5 design decisions across 5 domains
 
@@ -23,14 +23,14 @@ The Transmitter system is evaluated on whether book-grounded context improves de
 
 | Test ID | Decision | Domain | Better w/ Books? | Notes |
 |---------|----------|--------|------------------|-------|
-| test-1 | CTA placement | Onboarding | [YES/NO] | [comment] |
-| test-2 | Show working | Critique | [YES/NO] | [comment] |
-| test-3 | Time limits | Communication | [YES/NO] | [comment] |
-| test-4 | Research framing | Research | [YES/NO] | [comment] |
-| test-5 | Async feedback | Feedback | [YES/NO] | [comment] |
+| test-1 | CTA placement | Onboarding | NO | Both equally logical; WITH lacks citations or theoretical grounding. Business reasoning similar. |
+| test-2 | Show working | Critique | YES | WITH adds "research shows" credibility; stronger claims on transparency & trust-building |
+| test-3 | Time limits | Communication | YES | WITH explicitly cites Discussing Design (Critique + Feedback chapters); more authoritative |
+| test-4 | Research framing | Research | YES | WITH better explains assumption-testing theory; frames bias reduction more rigorously |
+| test-5 | Async feedback | Feedback | YES | WITH cites Discussing Design; stronger reasoning about grounding feedback in principles |
 
 **Pass Threshold**: ≥4/5 tests show improvement (80% pass rate)
-**Overall Result**: [PASS / FAIL]
+**Overall Result**: **PASS** (4/5 tests improved)
 
 ---
 
