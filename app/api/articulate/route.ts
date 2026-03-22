@@ -5,8 +5,7 @@ import {
   appendCitations,
 } from "@/lib/augment-prompt";
 
-const ORIGINAL_ARTICULATE_PROMPT = `You are a senior product designer helping articulate a design decision to stakeholders.
-Be concise, concrete, and persuasive. Avoid jargon.
+const ORIGINAL_ARTICULATE_PROMPT = `You are a senior product designer helping articulate a design decision to stakeholders. Be concise, concrete, and persuasive. Avoid jargon.
 
 Write a 3-part response:
 1. ONE sentence that names the decision and its core user benefit
@@ -35,20 +34,14 @@ export async function POST(request: Request) {
   let body: ArticulateRequest;
   try {
     body = await request.json();
-  } catch {
+  } catch (err) {
     return NextResponse.json(
       { error: "Invalid JSON body" },
       { status: 400 }
     );
   }
 
-  const {
-    decision,
-    userRationale,
-    bizRationale,
-    objection,
-    audience,
-  } = body;
+  const { decision, userRationale, bizRationale, objection, audience } = body;
 
   if (!decision || !userRationale) {
     return NextResponse.json(
@@ -57,18 +50,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Build search query from all inputs
   const searchQuery = [decision, userRationale, bizRationale, objection]
     .filter(Boolean)
     .join(" ");
 
-  // Augment prompt with book context
   const { augmentedPrompt, bookResults } = augmentPromptWithBooks(
     ORIGINAL_ARTICULATE_PROMPT,
     searchQuery
   );
 
-  // Build the full prompt for Claude
   const fullPrompt = `${augmentedPrompt}
 
 Decision: ${decision}
@@ -93,7 +83,6 @@ ${audience ? `Audience: ${audience}` : ""}`;
     const responseText =
       message.content[0].type === "text" ? message.content[0].text : "";
 
-    // Append citations
     const outputWithCitations = appendCitations(responseText, bookResults);
 
     return NextResponse.json({
