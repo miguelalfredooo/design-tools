@@ -144,11 +144,13 @@ function SegmentCard({ segment }: { segment: Segment }) {
     setLoading(false);
   }, [segment.id]);
 
-  useEffect(() => {
-    if (expanded && items.length === 0) {
-      fetchItems();
+  async function handleToggle() {
+    const nextExpanded = !expanded;
+    setExpanded(nextExpanded);
+    if (nextExpanded && items.length === 0) {
+      await fetchItems();
     }
-  }, [expanded, items.length, fetchItems]);
+  }
 
   const bucketCounts: Partial<Record<Bucket, number>> = {};
   for (const item of items) {
@@ -160,7 +162,9 @@ function SegmentCard({ segment }: { segment: Segment }) {
       <CardContent className="p-0">
         {/* Header */}
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => {
+            void handleToggle();
+          }}
           className="w-full flex items-center gap-3 p-4 text-left hover:bg-muted/50 transition-colors"
         >
           {expanded ? (
@@ -294,8 +298,25 @@ export default function SegmentsPage() {
   }, []);
 
   useEffect(() => {
-    fetchSegments();
-  }, [fetchSegments]);
+    let cancelled = false;
+
+    async function loadSegments() {
+      const res = await fetch("/api/design/research/segments");
+      if (!res.ok || cancelled) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      setSegments(await res.json());
+      setLoading(false);
+    }
+
+    void loadSegments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="flex justify-center min-w-0 pt-6 pb-12 px-4">

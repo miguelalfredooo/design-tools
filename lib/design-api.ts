@@ -6,6 +6,7 @@ import type {
   DesignCommentRow,
   MediaType,
 } from "./design-types";
+import { getAdminPassword } from "@/hooks/use-admin";
 
 const BASE = "/api/design/sessions";
 
@@ -56,16 +57,14 @@ export async function apiUpdateSession(
 ) {
   return api<{ ok: true }>(`${BASE}/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ creatorToken, ...updates }),
-    credentials: "include",
+    body: JSON.stringify({ creatorToken, adminPassword: getAdminPassword(), ...updates }),
   });
 }
 
 export async function apiDeleteSession(id: string, creatorToken: string) {
   return api<{ ok: true }>(`${BASE}/${id}`, {
     method: "DELETE",
-    body: JSON.stringify({ creatorToken }),
-    credentials: "include",
+    body: JSON.stringify({ creatorToken, adminPassword: getAdminPassword() }),
   });
 }
 
@@ -78,8 +77,7 @@ export async function apiAddOption(
 ) {
   return api<{ option: VotingOptionRow }>(`${BASE}/${sessionId}/options`, {
     method: "POST",
-    body: JSON.stringify({ ...option, creatorToken }),
-    credentials: "include",
+    body: JSON.stringify({ ...option, creatorToken, adminPassword: getAdminPassword() }),
   });
 }
 
@@ -91,8 +89,7 @@ export async function apiUpdateOption(
 ) {
   return api<{ ok: true }>(`${BASE}/${sessionId}/options`, {
     method: "PATCH",
-    body: JSON.stringify({ optionId, creatorToken, ...updates }),
-    credentials: "include",
+    body: JSON.stringify({ optionId, creatorToken, adminPassword: getAdminPassword(), ...updates }),
   });
 }
 
@@ -103,8 +100,7 @@ export async function apiRemoveOption(
 ) {
   return api<{ ok: true }>(`${BASE}/${sessionId}/options`, {
     method: "DELETE",
-    body: JSON.stringify({ optionId, creatorToken }),
-    credentials: "include",
+    body: JSON.stringify({ optionId, creatorToken, adminPassword: getAdminPassword() }),
   });
 }
 
@@ -135,8 +131,7 @@ export async function apiPinVote(
 ) {
   return api<{ ok: true }>(`${BASE}/${sessionId}/votes`, {
     method: "PATCH",
-    body: JSON.stringify({ voteId, pinned, creatorToken }),
-    credentials: "include",
+    body: JSON.stringify({ voteId, pinned, creatorToken, adminPassword: getAdminPassword() }),
   });
 }
 
@@ -185,8 +180,8 @@ export async function apiDeleteSpatialComment(
       commentId,
       voterId,
       creatorToken: null,
+      adminPassword: getAdminPassword(),
     }),
-    credentials: "include",
   });
 }
 
@@ -200,8 +195,8 @@ export async function apiDeleteSpatialCommentAsCreator(
     body: JSON.stringify({
       commentId,
       creatorToken,
+      adminPassword: getAdminPassword(),
     }),
-    credentials: "include",
   });
 }
 

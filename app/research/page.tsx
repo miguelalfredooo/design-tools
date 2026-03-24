@@ -1,38 +1,40 @@
-import { supabase } from "@/lib/supabase";
-import type { ResearchInsightRow } from "@/lib/research-types";
-import { insightFromRow } from "@/lib/research-types";
-import { ResearchClient } from "@/components/design/research-client";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { Suspense } from "react";
+import { ProjectIndex, type Project } from "@/components/design/research/project-index";
 
-async function getLatestBatch() {
-  if (!supabase) return null;
-
-  const { data: latest } = await supabase
-    .from("research_insights")
-    .select("batch_id, created_at")
-    .filter("session_id", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (!latest) return null;
-
-  const { data: rows } = await supabase
-    .from("research_insights")
+async function getProjects() {
+  const db = getSupabaseAdmin();
+  const { data: projects } = await db
+    .from("research_projects")
     .select("*")
-    .eq("batch_id", latest.batch_id)
-    .order("created_at", { ascending: true });
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
 
-  if (!rows) return null;
+  const projectIds = (projects ?? []).map((p: { id: string }) => p.id);
+  if (projectIds.length === 0) return [];
 
-  const insights = (rows as ResearchInsightRow[]).map(insightFromRow);
-  return {
-    batchId: latest.batch_id,
-    createdAt: latest.created_at,
-    insights,
-  };
+  const [obsRes, segRes] = await Promise.all([
+    db.from("research_observations").select("id, project_id").in("project_id", projectIds),
+    db.from("research_segments").select("id, project_id").in("project_id", projectIds),
+  ]);
+
+  const obsCounts: Record<string, number> = {};
+  const segCounts: Record<string, number> = {};
+  for (const o of obsRes.data ?? []) obsCounts[o.project_id] = (obsCounts[o.project_id] ?? 0) + 1;
+  for (const s of segRes.data ?? []) segCounts[s.project_id] = (segCounts[s.project_id] ?? 0) + 1;
+
+  return (projects ?? []).map((p: Record<string, unknown>) => ({
+    ...(p as Omit<Project, "observationCount" | "segmentCount">),
+    observationCount: obsCounts[p.id as string] ?? 0,
+    segmentCount: segCounts[p.id as string] ?? 0,
+  })) as Project[];
 }
 
 export default async function ResearchPage() {
-  const batch = await getLatestBatch();
-  return <ResearchClient batch={batch} />;
+  const projects = await getProjects();
+  return (
+    <Suspense>
+      <ProjectIndex initialProjects={projects} />
+    </Suspense>
+  );
 }

@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const db = getSupabaseAdmin();
   const { searchParams } = new URL(req.url);
   const area = searchParams.get("area");
+  const projectId = searchParams.get("projectId");
 
   let query = db
     .from("research_observations")
@@ -15,6 +16,12 @@ export async function GET(req: NextRequest) {
 
   if (area) {
     query = query.eq("area", area);
+  }
+
+  if (projectId === "null") {
+    query = query.eq("project_id", "00000000-0000-0000-0000-000000000001");
+  } else if (projectId) {
+    query = query.eq("project_id", projectId);
   }
 
   const { data, error } = await query;
@@ -30,7 +37,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = getSupabaseAdmin();
-  const { body, area, contributor, sourceUrl, token } = await req.json();
+  const { body, area, contributor, sourceUrl, token, projectId } = await req.json();
 
   if (!body || !area) {
     return NextResponse.json(
@@ -39,11 +46,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // If token provided, validate it (public submission)
+  // If token provided, validate it and pull project_id from it
+  let tokenProjectId: string | null = null;
   if (token) {
     const { data: tokenRow } = await db
       .from("research_share_tokens")
-      .select("id, expires_at")
+      .select("id, expires_at, project_id")
       .eq("token", token)
       .single();
 
@@ -54,7 +62,11 @@ export async function POST(req: NextRequest) {
     if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) {
       return NextResponse.json({ error: "Token expired" }, { status: 401 });
     }
+
+    tokenProjectId = tokenRow.project_id ?? null;
   }
+
+  const resolvedProjectId = projectId || tokenProjectId || '00000000-0000-0000-0000-000000000001';
 
   const { data, error } = await db
     .from("research_observations")
@@ -63,6 +75,7 @@ export async function POST(req: NextRequest) {
       area,
       contributor: contributor || null,
       source_url: sourceUrl || null,
+      project_id: resolvedProjectId,
     })
     .select()
     .single();

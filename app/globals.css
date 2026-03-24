@@ -43,6 +43,11 @@
 
 @theme inline {
   /* ------------------------------------------------------------------ */
+  /* Typography — Manrope as the global sans-serif                      */
+  /* ------------------------------------------------------------------ */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* ------------------------------------------------------------------ */
   /* Grid & Spacing System — 2x octave progression from 4px base       */
   /* ------------------------------------------------------------------ */
 
@@ -112,6 +117,24 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Carrier — status indicator tokens */
+  --color-status-complete:     #3B6D11;
+  --color-status-complete-bg:  #EAF3DE;
+  --color-status-progress:     #854F0B;
+  --color-status-progress-bg:  #FAEEDA;
+  --color-status-blocked:      #A32D2D;
+  --color-status-blocked-bg:   #FCEBEB;
+  --color-status-idle:         #888780;
+  --color-status-idle-bg:      #F1EFE8;
+
+  /* Carrier — insight card type tokens */
+  --color-insight-risk-bg:            #FCEBEB;
+  --color-insight-risk-text:          #A32D2D;
+  --color-insight-opportunity-bg:     #EAF3DE;
+  --color-insight-opportunity-text:   #3B6D11;
+  --color-insight-pattern-bg:         #E1F5EE;
+  --color-insight-pattern-text:       #0F6E56;
 }
 
 :root {
@@ -187,25 +210,22 @@
   * {
     @apply border-border outline-ring/50;
   }
+  textarea {
+    field-sizing: content;
+  }
+  ::placeholder {
+    color: oklch(0.6 0 0 / 0.25);
+  }
   html {
     scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground;
-  }
-
-  /* Form input wrapping */
-  input[type="text"],
-  input[type="email"],
-  input[type="url"],
-  textarea {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  textarea {
-    white-space: pre-wrap;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 24px;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
@@ -216,4 +236,247 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ── Design Ops ── */
+
+/* Card open state */
+.do-card-open {
+  border-color: oklch(0.835 0 0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Module trigger title */
+.do-trigger-label {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+  letter-spacing: -0.2px;
+  color: var(--foreground);
+  flex: 1;
+}
+
+/* Section labels (numbered: "1. Objective", "2. Problem / Opportunity") */
+.do-section-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 24px;
+  color: var(--foreground);
+  margin-bottom: 6px;
+}
+
+/* Doc title (large objective title) */
+.do-doc-title {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 36px;
+  letter-spacing: -0.1px;
+  color: var(--foreground);
+}
+
+/* Doc body (description, findings) */
+.do-doc-body {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--muted-foreground);
+}
+
+/* Section divider */
+.do-rule {
+  height: 1.5px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* Info table wrapper */
+.do-table-wrap {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Info table */
+.do-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.do-table th,
+.do-table td {
+  outline: none;
+}
+.do-table th {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--foreground);
+  background: oklch(0.985 0 0);
+  padding: 8px 12px;
+  border-bottom: 1.5px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.do-table th:last-child { border-right: none; }
+.do-table td {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--muted-foreground);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  vertical-align: top;
+}
+.do-table td:last-child { border-right: none; }
+.do-table td:first-child {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--foreground);
+}
+.do-table td strong {
+  font-weight: 800;
+  color: var(--foreground);
+}
+.do-table tr:last-child td { border-bottom: none; }
+
+/* Badge pills */
+.do-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.do-badge-green  { background: #d1fae5; color: #065f46; }
+.do-badge-amber  { background: #fef3c7; color: #92400e; }
+.do-badge-violet { background: #ede9fe; color: #5b21b6; }
+.do-badge-gray   { background: var(--muted); color: var(--foreground); }
+
+/* Active objective reference chip (green success) */
+.do-obj-ref {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+}
+.do-obj-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  flex-shrink: 0;
+}
+.do-obj-ref-text {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #166534;
+}
+.do-obj-ref-text strong { font-weight: 500; }
+
+/* Context toggle (Add context / Hide context) */
+.do-ctx-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  transition: color 0.1s;
+}
+.do-ctx-toggle:hover { color: var(--foreground); }
+
+.do-ctx-panel {
+  margin-top: 10px;
+  padding: 14px 16px;
+  background: var(--muted);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+}
+
+/* List items (previous objectives, archive rows) */
+.do-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--muted);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  transition: all 0.1s;
+}
+.do-list-item:hover {
+  border-color: oklch(0.835 0 0);
+  background: var(--background);
+}
+.do-list-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.do-list-meta {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+/* List header */
+.do-list-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.do-list-header-label {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--foreground);
+  flex: 1;
+}
+
+/* Textarea override for Design Ops */
+.do-textarea {
+  background: var(--muted) !important;
+  border: 1.5px solid var(--border) !important;
+  font-size: 15px !important;
+  line-height: 24px !important;
+}
+.do-textarea:focus {
+  border-color: oklch(0.835 0 0) !important;
+  background: var(--background) !important;
+}
+
+/* Mode description */
+.do-mode-desc {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--muted-foreground);
+  margin-top: 8px;
 }

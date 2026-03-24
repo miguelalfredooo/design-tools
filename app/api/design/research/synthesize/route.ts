@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { generateWithOllama, getModelName, parseOllamaJSON } from "@/lib/ollama";
+import {
+  generateSynthesisText,
+  getSynthesisModelName,
+  parseLLMJSON,
+} from "@/lib/synthesis-llm";
 import type {
   OllamaSynthesisResponse,
   ResearchInsightRow,
@@ -266,23 +270,23 @@ export async function POST() {
   const formattedData = formatSessionData(sessions, options, votes, comments);
   const prompt = buildPrompt(formattedData, sessions.length);
 
-  // Step 3: Call Ollama
+  // Step 3: Call configured synthesis provider
   let rawResponse: string;
   try {
-    rawResponse = await generateWithOllama(prompt);
+    rawResponse = await generateSynthesisText(prompt);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Ollama request failed";
+    const message = err instanceof Error ? err.message : "Synthesis request failed";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
   // Step 4: Parse JSON
   let synthesis: OllamaSynthesisResponse;
   try {
-    synthesis = parseOllamaJSON<OllamaSynthesisResponse>(rawResponse);
+    synthesis = parseLLMJSON<OllamaSynthesisResponse>(rawResponse);
   } catch {
     return NextResponse.json(
       {
-        error: "Failed to parse Ollama response as JSON",
+        error: "Failed to parse synthesis response as JSON",
         raw: rawResponse.slice(0, 500),
       },
       { status: 502 }
@@ -307,7 +311,7 @@ export async function POST() {
 
   return NextResponse.json({
     batchId,
-    model: getModelName(),
+    model: getSynthesisModelName(),
     insightCount: rows.length,
     sessionCount: sessions.length,
   });

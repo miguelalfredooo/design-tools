@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Target, Crosshair, Users, ShieldCheck } from "lucide-react";
+import { ChevronDown, Target, Crosshair, Users, ShieldCheck, Tag, FlaskConical } from "lucide-react";
 import type { ExplorationSession } from "@/lib/design-types";
 import { cn } from "@/lib/utils";
+import { BriefFramingSequence } from "@/components/design/brief-framing-sequence";
 
 interface SessionBriefProps {
   session: ExplorationSession;
 }
 
 const briefFields = [
-  { key: "problem" as const, label: "Problem", icon: Target },
+  { key: "topic" as const, label: "Topic area", icon: Tag },
+  { key: "hypothesis" as const, label: "Hypothesis", icon: FlaskConical },
   { key: "goal" as const, label: "Goal", icon: Crosshair },
+  { key: "problem" as const, label: "Problem / Opportunity", icon: Target },
   { key: "audience" as const, label: "Audience", icon: Users },
   { key: "constraints" as const, label: "Constraints", icon: ShieldCheck },
 ];
@@ -19,7 +22,7 @@ const briefFields = [
 export function SessionBrief({ session }: SessionBriefProps) {
   const [expanded, setExpanded] = useState(true);
 
-  const hasBrief = session.problem || session.goal || session.audience || session.constraints;
+  const hasBrief = session.topic || session.hypothesis || session.problem || session.goal || session.audience || session.constraints;
   if (!hasBrief) return null;
 
   return (
@@ -38,20 +41,23 @@ export function SessionBrief({ session }: SessionBriefProps) {
         />
       </button>
       {expanded && (
-        <div className="grid gap-3 mt-2 grid-cols-1 md:grid-cols-2 w-full">
-          {briefFields.map(({ key, label, icon: Icon }) => {
-            const value = session[key];
-            if (!value) return null;
-            return (
-              <div key={key} className="space-y-1 min-w-0">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                  <Icon className="size-3" />
-                  {label}
+        <div className="mt-3 space-y-4">
+          <BriefFramingSequence compact />
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 w-full">
+            {briefFields.map(({ key, label, icon: Icon }) => {
+              const value = session[key];
+              if (!value) return null;
+              return (
+                <div key={key} className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Icon className="size-3" />
+                    {label}
+                  </div>
+                  <p className="text-sm">{value}</p>
                 </div>
-                <p className="text-sm break-words whitespace-normal">{value}</p>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

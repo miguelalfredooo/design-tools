@@ -1,20 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
-import { verifySessionToken } from "@/app/lib/session";
-import { validateVoteInput } from "@/app/lib/input-validation";
-
-function extractSessionToken(request: Request): string | null {
-  const cookieHeader = request.headers.get("cookie") || "";
-  const cookies = cookieHeader.split(";");
-  for (const cookie of cookies) {
-    const trimmed = cookie.trim();
-    if (trimmed.startsWith("sessionToken=")) {
-      return trimmed.substring("sessionToken=".length);
-    }
-  }
-  return null;
-}
 
 export async function POST(
   request: Request,
@@ -22,13 +8,6 @@ export async function POST(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
-  const validation = validateVoteInput(body);
-  if (!validation.valid) {
-    return NextResponse.json(
-      { error: "Validation failed", details: validation.errors },
-      { status: 400 }
-    );
-  }
   const { optionId, voterId, voterName, comment } = body;
 
   if (!optionId || !voterId || !voterName?.trim()) {
@@ -105,26 +84,19 @@ export async function POST(
       actorName: voterName.trim(),
       message: `${voterName.trim()} voted in "${sessionForNotif.title}"`,
       link: `/explorations/${sessionId}/options/${optionId}`,
-    }).catch((err) => {
-      console.error('[Notification Error] Failed to create vote notification:', err);
-    });
+    }).catch(() => {});
   }
 
   // Check if we should auto-reveal
-  const { data: allVotes } = await db
-    .from("voting_votes")
-    .select("voter_id")
-    .eq("session_id", sessionId);
+  const { data: voteCount } = await db.rpc("get_vote_count", {
+    p_session_id: sessionId,
+  });
 
-  const distinctVoters = new Set((allVotes ?? []).map((v) => v.voter_id));
-  const voteCount = distinctVoters.size;
-
-  if (voteCount >= session.participant_count && session.phase === "voting") {
+  if (voteCount >= session.participant_count) {
     await db
       .from("voting_sessions")
       .update({ phase: "revealed" })
-      .eq("id", sessionId)
-      .eq("phase", "voting");
+      .eq("id", sessionId);
   }
 
   return NextResponse.json({ ok: true });
@@ -145,10 +117,6 @@ export async function PATCH(
     );
   }
 
-  // Check sessionToken first (preferred method)
-  const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
-
   const db = getSupabaseAdmin();
 
   // Verify session exists
@@ -162,7 +130,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  // Auth: sessionToken valid OR must be creator or admin
+  // Auth: must be creator or admin
   const isCreator = creatorToken && session.creator_token === creatorToken;
   let isAdmin = false;
   if (adminPassword) {
@@ -170,7 +138,7 @@ export async function PATCH(
     isAdmin = !!expectedPassword && adminPassword === expectedPassword;
   }
 
-  if (!sessionValid && !isCreator && !isAdmin) {
+  if (!isCreator && !isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

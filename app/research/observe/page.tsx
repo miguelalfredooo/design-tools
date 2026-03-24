@@ -149,22 +149,48 @@ function ObservationForm({ onSubmit }: { onSubmit: () => void }) {
 // ── Share Link Section ──────────────────────────────────────────────────────
 
 function ShareLinkSection() {
+  const [open, setOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Brief fields
+  const [title, setTitle] = useState("");
+  const [question, setQuestion] = useState("");
+  const [hypothesis, setHypothesis] = useState("");
+  const [areasInput, setAreasInput] = useState("");
+  const [promptsInput, setPromptsInput] = useState("");
+
   async function generateToken() {
     setGenerating(true);
     try {
+      const areas = areasInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const prompts = promptsInput
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const context = {
+        title: title.trim() || undefined,
+        question: question.trim() || undefined,
+        hypothesis: hypothesis.trim() || undefined,
+        areas: areas.length ? areas : undefined,
+        prompts: prompts.length ? prompts : undefined,
+      };
+
       const res = await fetch("/api/design/research/share-tokens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ createdBy: "admin" }),
+        body: JSON.stringify({ createdBy: "admin", context }),
       });
       if (!res.ok) return;
       const data = await res.json();
-      const url = `${window.location.origin}/research/log?token=${data.token}`;
+      const url = `${window.location.origin}/research/contribute?token=${data.token}`;
       setShareUrl(url);
+      setOpen(false);
     } catch {
       toast.error("Failed to generate link");
     } finally {
@@ -179,33 +205,106 @@ function ShareLinkSection() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      {shareUrl ? (
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <code className="text-xs bg-muted px-2 py-1 rounded truncate flex-1 min-w-0">
-            {shareUrl}
-          </code>
-          <Button variant="ghost" size="sm" onClick={copyLink}>
-            {copied ? (
-              <Check className="size-3.5 text-emerald-500" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-          </Button>
-        </div>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={generateToken}
-          disabled={generating}
-          className="gap-1.5"
-        >
-          <Link2 className="size-3.5" />
-          Generate Share Link
+  if (shareUrl) {
+    return (
+      <div className="flex items-center gap-2 min-w-0">
+        <code className="text-xs bg-muted px-2 py-1 rounded truncate max-w-[280px]">
+          {shareUrl}
+        </code>
+        <Button variant="ghost" size="sm" onClick={copyLink} className="shrink-0">
+          {copied ? (
+            <Check className="size-3.5 text-emerald-500" />
+          ) : (
+            <Copy className="size-3.5" />
+          )}
         </Button>
-      )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 text-xs text-muted-foreground"
+          onClick={() => { setShareUrl(null); setOpen(false); }}
+        >
+          New link
+        </Button>
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setOpen(true)}
+        className="gap-1.5 shrink-0"
+      >
+        <Link2 className="size-3.5" />
+        Create contribution link
+      </Button>
+    );
+  }
+
+  return (
+    <div className="border border-border rounded-xl p-4 space-y-3 bg-card w-full max-w-sm shadow-sm">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold">Contribution brief</p>
+        <button
+          onClick={() => setOpen(false)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <Input
+        placeholder="Research title  (e.g. Creator Engagement Sprint 4)"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="h-8 text-xs"
+      />
+
+      <Textarea
+        placeholder="Research question  (e.g. Why are creators going silent after 2 weeks?)"
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        rows={2}
+        className="text-xs resize-none"
+      />
+
+      <Textarea
+        placeholder="Hypothesis  (e.g. We believe creators lose context on who's engaging with them)"
+        value={hypothesis}
+        onChange={(e) => setHypothesis(e.target.value)}
+        rows={2}
+        className="text-xs resize-none"
+      />
+
+      <Input
+        placeholder="Areas in scope (comma-separated: Notifications, Engagement)"
+        value={areasInput}
+        onChange={(e) => setAreasInput(e.target.value)}
+        className="h-8 text-xs"
+      />
+
+      <Textarea
+        placeholder={"What to look for — one prompt per line:\nWhat did you see users struggle with?\nWhat surprised you in replays?"}
+        value={promptsInput}
+        onChange={(e) => setPromptsInput(e.target.value)}
+        rows={3}
+        className="text-xs resize-none"
+      />
+
+      <p className="text-[10px] text-muted-foreground">All fields optional — the link works without them.</p>
+
+      <Button
+        size="sm"
+        className="w-full gap-1.5"
+        onClick={generateToken}
+        disabled={generating}
+      >
+        {generating ? <Loader2 className="size-3.5 animate-spin" /> : <Link2 className="size-3.5" />}
+        Generate link
+      </Button>
     </div>
   );
 }

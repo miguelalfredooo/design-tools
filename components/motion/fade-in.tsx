@@ -1,7 +1,6 @@
 "use client";
-
 import { m } from "motion/react";
-import { springs, type Direction, getDirectionOffset } from "@/lib/motion";
+import { springs, type Direction } from "@/lib/motion";
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -14,17 +13,14 @@ interface FadeInProps {
 
 export function FadeIn({
   children,
-  direction,
   delay = 0,
   duration,
   className,
   style,
 }: FadeInProps) {
-  const offset = direction ? getDirectionOffset(direction) : { x: 0, y: 0 };
-
   return (
     <m.div
-      initial={{ opacity: 0, x: offset.x, y: offset.y }}
+      initial={false}
       animate={{ opacity: 1, x: 0, y: 0 }}
       transition={{
         ...springs.smooth,

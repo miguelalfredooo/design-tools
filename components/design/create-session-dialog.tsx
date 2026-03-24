@@ -10,7 +10,8 @@ import { useAdmin } from "@/hooks/use-admin";
 import { generateId } from "@/lib/design-utils";
 import type { MediaType } from "@/lib/design-types";
 import { OptionForm } from "@/components/design/option-form";
-import { SessionBriefForm, type SessionBriefData } from "@/components/design/session-brief-form";
+import { LiveDraftHeaderFields } from "@/components/design/live-draft-header-fields";
+import { SessionBriefInputs } from "@/components/design/session-brief-inputs";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CarrierInput } from "@/components/ui/carrier-input";
-import { CarrierTextarea } from "@/components/ui/carrier-textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface OptionDraft {
@@ -59,15 +59,12 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
   const [previewUrl, setPreviewUrl] = useState("");
   const [participantCount, setParticipantCount] = useState(3);
   const [showBrief, setShowBrief] = useState(false);
-  const [brief, setBrief] = useState<SessionBriefData>({
-    title: "",
-    description: "",
-    problem: "",
-    goal: "",
-    audience: "",
-    constraints: "",
-    previewUrl: "",
-  });
+  const [topic, setTopic] = useState("");
+  const [hypothesis, setHypothesis] = useState("");
+  const [problem, setProblem] = useState("");
+  const [goal, setGoal] = useState("");
+  const [audience, setAudience] = useState("");
+  const [constraints, setConstraints] = useState("");
 
   // Step 2 — Options
   const [options, setOptions] = useState<OptionDraft[]>([
@@ -82,15 +79,12 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
     setPreviewUrl("");
     setParticipantCount(3);
     setShowBrief(false);
-    setBrief({
-      title: "",
-      description: "",
-      problem: "",
-      goal: "",
-      audience: "",
-      constraints: "",
-      previewUrl: "",
-    });
+    setTopic("");
+    setHypothesis("");
+    setProblem("");
+    setGoal("");
+    setAudience("");
+    setConstraints("");
     setOptions([makeDefaultOption(), makeDefaultOption()]);
   }
 
@@ -128,11 +122,13 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
         })),
         previewUrl.trim() || undefined,
         {
-          problem: brief.problem.trim() || undefined,
-          goal: brief.goal.trim() || undefined,
-          audience: brief.audience.trim() || undefined,
-          constraints: brief.constraints.trim() || undefined,
-        }
+          topic: topic.trim() || undefined,
+          hypothesis: hypothesis.trim() || undefined,
+          problem: problem.trim() || undefined,
+          goal: goal.trim() || undefined,
+          audience: audience.trim() || undefined,
+          constraints: constraints.trim() || undefined,
+        },
       );
       toast.success(`Created "${session.title}"`);
       reset();
@@ -201,29 +197,20 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
         {/* ── Step 1: Setup ──────────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="session-title">What are you exploring?</Label>
-              <CarrierInput
-                id="session-title"
-                placeholder="e.g. Homepage hero redesign"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-                designSize="md"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="session-desc">Description</Label>
-              <CarrierTextarea
-                id="session-desc"
-                placeholder="Brief context for voters..."
-                rows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                designSize="sm"
-              />
-            </div>
+            <LiveDraftHeaderFields
+              titleId="session-title"
+              descriptionId="session-desc"
+              titleLabel="What are you exploring?"
+              descriptionLabel="Description"
+              titlePlaceholder="e.g. Homepage hero redesign"
+              descriptionPlaceholder="Proposed solution or concept summary for voters..."
+              titleValue={title}
+              descriptionValue={description}
+              onTitleChange={setTitle}
+              onDescriptionChange={setDescription}
+              density="form"
+              autoFocus
+            />
 
             <div className="flex gap-4">
               <div className="flex-1 space-y-2">
@@ -233,6 +220,7 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
                     <Button
                       key={n}
                       type="button"
+                      size="sm"
                       variant={participantCount === n ? "default" : "outline"}
                       className="flex-1 h-8 text-xs"
                       onClick={() => setParticipantCount(n)}
@@ -246,24 +234,48 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
 
             <div className="space-y-2">
               <Label htmlFor="preview-url">Preview URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <CarrierInput
+              <Input
                 id="preview-url"
                 type="url"
                 placeholder="https://..."
                 value={previewUrl}
                 onChange={(e) => setPreviewUrl(e.target.value)}
-                designSize="md"
               />
             </div>
 
-            {/* Session brief form */}
-            <SessionBriefForm
-              brief={brief}
-              onBriefChange={(field, value) => setBrief((prev) => ({ ...prev, [field]: value }))}
-              expanded={showBrief}
-              onExpandedChange={setShowBrief}
-              showHeader={true}
-            />
+            {/* Collapsible brief section */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowBrief(!showBrief)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+              >
+                <ChevronDown className={cn("size-3.5 transition-transform", !showBrief && "-rotate-90")} />
+                <span className="font-medium">Design brief</span>
+                <span className="text-xs">(optional)</span>
+              </button>
+
+              {showBrief && (
+                <div className="space-y-3 mt-3 pl-5 border-l-2 border-border">
+                  <SessionBriefInputs
+                    topic={topic}
+                    hypothesis={hypothesis}
+                    goal={goal}
+                    problem={problem}
+                    audience={audience}
+                    constraints={constraints}
+                    onTopicChange={setTopic}
+                    onHypothesisChange={setHypothesis}
+                    onGoalChange={setGoal}
+                    onProblemChange={setProblem}
+                    onAudienceChange={setAudience}
+                    onConstraintsChange={setConstraints}
+                    useTextarea
+                  />
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 
@@ -289,6 +301,7 @@ export function CreateSessionDialog({ children }: { children: React.ReactNode })
                   {options.length > 1 && (
                     <Button
                       variant="ghost"
+                      size="icon-xs"
                       className="mt-1.5"
                       onClick={() => removeOption(opt.key)}
                     >

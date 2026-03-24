@@ -1,58 +1,198 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, Play, AlertTriangle, RefreshCw } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Loader2, Play, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CarrierTextarea } from "@/components/ui/carrier-textarea";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { getMetricLabel } from "@/lib/design-ops-label-helpers";
+import { toPlainText } from "@/lib/design-ops-formatting";
+import {
+  buildRecommendedPrompt,
+} from "@/lib/design-ops-prompts";
 import { toast } from "sonner";
-import type { Objective, AgentMessage, CrewHealthStatus, DesignOutput } from "@/lib/design-ops-types";
+import type {
+  Objective,
+  AgentMessage,
+  CrewHealthStatus,
+  SynthesisMode,
+} from "@/lib/design-ops-types";
 
 interface DesignOpsCrewRunnerProps {
-  objectives: Objective[];
+  objective: Objective | null;
   onMessages: (messages: AgentMessage[]) => void;
   onRunStatusChange: (running: boolean) => void;
-  iteration?: number;
-  previousDesignOutput?: DesignOutput | null;
-  onIterationComplete?: () => void;
-  problemStatement?: string;
-  userSegment?: string;
-  metric?: string;
-  constraints?: string;
+  onModeChange?: (mode: SynthesisMode) => void;
+  onRunComplete?: (payload: {
+    prompt: string;
+    mode: SynthesisMode;
+    objectives: Objective[];
+    messages: AgentMessage[];
+    provider?: string;
+    model?: string;
+  }) => void | Promise<void>;
 }
 
+const SYNTHESIS_MODES: Array<{
+  value: SynthesisMode;
+  shortLabel: string;
+  description: string;
+}> = [
+  {
+    value: "quick_read",
+    shortLabel: "Quick",
+    description: "Fast signal: recommendation, confidence, assumptions, next step.",
+  },
+  {
+    value: "decision_memo",
+    shortLabel: "Balanced",
+    description: "Balanced depth: recommendation, rationale, alternatives, and risks.",
+  },
+  {
+    value: "deep_dive",
+    shortLabel: "Deep",
+    description: "Full analysis: scenarios, evidence gaps, and richer tradeoffs.",
+  },
+];
+
 export function DesignOpsCrewRunner({
-  objectives,
+  objective,
   onMessages,
   onRunStatusChange,
-  iteration = 1,
-  previousDesignOutput,
-  onIterationComplete,
-  problemStatement = "",
-  userSegment = "",
-  metric = "",
-  constraints = "",
+  onModeChange,
+  onRunComplete,
 }: DesignOpsCrewRunnerProps) {
   const [prompt, setPrompt] = useState("");
+  const [mode, setMode] = useState<SynthesisMode>("decision_memo");
   const [running, setRunning] = useState(false);
-  const [synthesisT, setSynthesisTier] = useState<"quick" | "balanced" | "in-depth">("balanced");
   const [health, setHealth] = useState<CrewHealthStatus | null>(null);
+  const lastSuggestedPrompt = useRef("");
+  const recommendedPrompt = useMemo(() => buildRecommendedPrompt(objective), [objective]);
+
+  useEffect(() => {
+    if (!recommendedPrompt) return;
+    if (!prompt.trim() || prompt === lastSuggestedPrompt.current) {
+      setPrompt(recommendedPrompt);
+      lastSuggestedPrompt.current = recommendedPrompt;
+    }
+  }, [recommendedPrompt, prompt]);
+
+  useEffect(() => {
+    onModeChange?.(mode);
+  }, [mode, onModeChange]);
 
   // Health check on mount
   useEffect(() => {
     fetch("/api/design-ops/health")
       .then((r) => r.json())
       .then(setHealth)
-      .catch(() =>
-        setHealth({ status: "unavailable", ollama: "unknown", models: [], configuredModel: "unknown" })
-      );
+      .catch(() => setHealth(null));
   }, []);
+
+  const consumeEventChunk = useCallback(
+    (
+      eventChunk: string,
+      context: {
+        promptText: string;
+        messages: AgentMessage[];
+        onEmit: (nextMessages: AgentMessage[]) => void;
+        setStreamError: (message: string) => void;
+      }
+    ) => {
+      let currentEvent = "";
+      const lines = eventChunk
+        .split(/\r?\n/)
+        .map((line) => line.trimEnd())
+        .filter(Boolean);
+
+      for (const line of lines) {
+        if (line.startsWith("event:")) {
+          currentEvent = line.slice(6).trim();
+          continue;
+        }
+
+        if (!line.startsWith("data:")) continue;
+
+        try {
+          const data = JSON.parse(line.slice(5).trim());
+          if (currentEvent === "run_start") {
+            const msg: AgentMessage = {
+              from: "system",
+              fromName: "SYSTEM",
+              to: "user",
+              subject: "Crew run started",
+              priority: "standard",
+              confidence: "n/a",
+              assumptions: "The request was accepted and the crew orchestration has started.",
+              body: `Run started for prompt: ${data.prompt || context.promptText}`,
+              nextStep: "Design Strategy is framing the brief.",
+              timestamp: data.started_at || new Date().toISOString(),
+            };
+            context.messages.push(msg);
+            context.onEmit([...context.messages]);
+            continue;
+          }
+
+          if (currentEvent === "agent_start") {
+            const agentName =
+              data.agent === "design_strategy" || data.agent === "ORACLE"
+                ? "Design Strategy"
+                : data.agent === "research_insights" || data.agent === "MERIDIAN"
+                  ? "Research & Insights"
+                  : data.agent || "Agent";
+            const msg: AgentMessage = {
+              from: data.agent_id || "system",
+              fromName: agentName,
+              to: "user",
+              subject: `${agentName} is working`,
+              priority: "standard",
+              confidence: "n/a",
+              assumptions: "This is a progress signal, not a synthesis result.",
+              body: `${agentName} is currently ${data.status || "working"} on the request.`,
+              nextStep: "Wait for the next streamed update.",
+              timestamp: new Date().toISOString(),
+            };
+            context.messages.push(msg);
+            context.onEmit([...context.messages]);
+            continue;
+          }
+
+          if (currentEvent === "error") {
+            context.setStreamError(data.error || "Crew run failed");
+            continue;
+          }
+
+          if (currentEvent === "agent_message" && data.from && data.body) {
+            const msg: AgentMessage = {
+              from: data.from,
+              fromName: data.from_name || data.fromName || "",
+              to: data.to || "",
+              subject: toPlainText(data.subject || ""),
+              priority: data.priority || "standard",
+              confidence: data.confidence || "medium",
+              assumptions: toPlainText(data.assumptions || ""),
+              body: toPlainText(data.body || ""),
+              nextStep: toPlainText(data.next_step || data.nextStep || ""),
+              timestamp: data.timestamp || new Date().toISOString(),
+            };
+            context.messages.push(msg);
+            context.onEmit([...context.messages]);
+          }
+        } catch {
+          // Skip non-JSON lines
+        }
+      }
+    },
+    []
+  );
 
   const handleRun = useCallback(async () => {
     if (!prompt.trim()) {
-      toast.error("Enter a focus prompt for Oracle");
+      toast.error("Add a question to continue");
+      return;
+    }
+    if (!objective) {
+      toast.error("Create or load an objective first");
       return;
     }
 
@@ -66,13 +206,8 @@ export function DesignOpsCrewRunner({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          synthesis_tier: synthesisT,
-          problem_statement: problemStatement || prompt.trim(),
-          user_segment: userSegment,
-          metric: metric,
-          constraints: constraints ? [constraints] : [],
-          previous_design_output: previousDesignOutput || null,
-          iteration: iteration,
+          mode,
+          objectives: [objective],
         }),
       });
 
@@ -87,46 +222,52 @@ export function DesignOpsCrewRunner({
       const decoder = new TextDecoder();
       const messages: AgentMessage[] = [];
       let buffer = "";
+      let streamError: string | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || "";
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              // Check if this is an agent_message event
-              if (data.from && data.body) {
-                const msg: AgentMessage = {
-                  from: data.from,
-                  fromName: data.from_name || data.fromName || "",
-                  to: data.to || "",
-                  subject: data.subject || "",
-                  priority: data.priority || "standard",
-                  confidence: data.confidence || "medium",
-                  assumptions: data.assumptions || "",
-                  body: data.body || "",
-                  nextStep: data.next_step || data.nextStep || "",
-                  timestamp: data.timestamp || new Date().toISOString(),
-                  tier: synthesisT, // Pass the selected synthesis tier to each message
-                };
-                messages.push(msg);
-                onMessages([...messages]);
-              }
-            } catch {
-              // Skip non-JSON lines
-            }
-          }
+        for (const eventChunk of events) {
+          consumeEventChunk(eventChunk, {
+            promptText: prompt.trim(),
+            messages,
+            onEmit: onMessages,
+            setStreamError: (message) => {
+              streamError = message;
+            },
+          });
         }
       }
 
+      if (buffer.trim()) {
+        consumeEventChunk(buffer, {
+          promptText: prompt.trim(),
+          messages,
+          onEmit: onMessages,
+          setStreamError: (message) => {
+            streamError = message;
+          },
+        });
+      }
+
+      if (streamError) {
+        throw new Error(streamError);
+      }
+
+      await onRunComplete?.({
+        prompt: prompt.trim(),
+        mode,
+        objectives: [objective],
+        messages: [...messages],
+        provider: health?.provider,
+        model: health?.configuredModel,
+      });
       toast.success("Crew synthesis complete");
-      onIterationComplete?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Crew run failed";
       toast.error(message);
@@ -134,103 +275,116 @@ export function DesignOpsCrewRunner({
       setRunning(false);
       onRunStatusChange(false);
     }
-  }, [prompt, synthesisT, onMessages, onRunStatusChange, iteration, previousDesignOutput, onIterationComplete]);
+  }, [
+    consumeEventChunk,
+    prompt,
+    mode,
+    objective,
+    onMessages,
+    onRunStatusChange,
+    onRunComplete,
+    health?.provider,
+    health?.configuredModel,
+  ]);
 
-  const crewUnavailable = health?.status === "unavailable";
-  const ollamaUnavailable = health?.ollama === "unavailable";
+  const providerUnavailable =
+    health?.status === "ok" &&
+    ["unavailable", "missing_api_key", "error"].includes(
+      health?.providerStatus || ""
+    );
+  const providerName = health?.provider === "openai" ? "OpenAI" : "model provider";
 
   return (
     <div className="space-y-4">
       {/* Health warnings */}
-      {crewUnavailable && (
+      {providerUnavailable && (
         <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
           <AlertTriangle className="size-4 text-amber-400 shrink-0" />
           <p className="text-xs text-amber-400">
-            Crew service unavailable. Start it with: <code className="bg-muted px-1 rounded">cd crew && source venv/bin/activate && uvicorn main:app --port 8000</code>
+            {providerName} is not configured. Update your Crew env to use Design Ops.
           </p>
         </div>
       )}
 
-      {!crewUnavailable && ollamaUnavailable && (
-        <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-          <AlertTriangle className="size-4 text-amber-400 shrink-0" />
-          <p className="text-xs text-amber-400">
-            Ollama not running. Start Ollama to use Design Ops.
-          </p>
-        </div>
-      )}
-
-      {/* Synthesis Tier */}
-      <div className="mb-4 space-y-2">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Synthesis Tier
-        </Label>
-        <RadioGroup value={synthesisT} onValueChange={(val) => setSynthesisTier(val as "quick" | "balanced" | "in-depth")}>
-          <div className="flex gap-3">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="quick" id="tier-quick" />
-              <Label htmlFor="tier-quick" className="font-normal cursor-pointer">
-                ⚡ Quick
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="balanced" id="tier-balanced" />
-              <Label htmlFor="tier-balanced" className="font-normal cursor-pointer">
-                ⚙️ Balanced
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="in-depth" id="tier-indepth" />
-              <Label htmlFor="tier-indepth" className="font-normal cursor-pointer">
-                🔬 In-Depth
-              </Label>
-            </div>
-          </div>
-        </RadioGroup>
+      {/* Mode selector */}
+      <span className="do-section-label">1. Synthesis Depth</span>
+      <div className="flex gap-1 rounded-lg border border-border/60 bg-muted/30 p-1 w-fit">
+        {SYNTHESIS_MODES.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setMode(option.value)}
+            disabled={running}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              mode === option.value
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {option.shortLabel}
+          </button>
+        ))}
       </div>
+      <p className="do-mode-desc">
+        {SYNTHESIS_MODES.find(m => m.value === mode)?.description ?? ""}
+      </p>
 
-      {/* Prompt input */}
-      <div>
-        <label className="text-sm font-medium mb-1.5 block">Focus prompt</label>
+      <div className="space-y-1.5 mt-5">
+        <span className="do-section-label">2. Focus Question</span>
+        <Label htmlFor="crew-runner-prompt" className="text-sm font-semibold sr-only">
+          What do you want to understand?
+        </Label>
         <Textarea
-          placeholder="What should Oracle focus on? (e.g., Why are users dropping off during onboarding?)"
+          id="crew-runner-prompt"
+          placeholder="e.g., Why are users dropping off during onboarding?"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
           disabled={running}
+          className="do-textarea"
         />
       </div>
 
+      {objective && (
+        <div className="mt-5">
+          <span className="do-section-label">3. Active Objective</span>
+          <div className="do-table-wrap">
+            <table className="do-table">
+              <thead>
+                <tr>
+                  <th>Objective</th>
+                  <th>Metric</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>{objective.title}</strong></td>
+                  <td>
+                    <span className="do-badge do-badge-gray">
+                      {getMetricLabel(objective.metric)}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Run button */}
-      <Button
-        onClick={handleRun}
-        disabled={running || crewUnavailable || !prompt.trim()}
-        className="w-full"
-      >
+      <Button onClick={handleRun} disabled={running || !prompt.trim() || !objective} className="w-full h-11 mt-4 text-[15px]">
         {running ? (
           <>
             <Loader2 className="size-4 animate-spin mr-2" />
-            Crew is thinking...
+            Analysis in progress...
           </>
         ) : (
           <>
             <Play className="size-4 mr-2" />
-            Run Crew
+            Run analysis
           </>
         )}
       </Button>
-
-      {/* Iterate button */}
-      {previousDesignOutput && !running && (
-        <Button
-          onClick={handleRun}
-          variant="outline"
-          className="w-full"
-        >
-          <RefreshCw className="size-4 mr-2" />
-          Iterate (Round {iteration})
-        </Button>
-      )}
     </div>
   );
 }

@@ -1,100 +1,92 @@
 from crewai import Task, Agent
 
 
-def create_synthesize_task(agent: Agent, context: dict) -> Task:
-    """
-    Research pressure-tests PM's assumptions against data.
-    Receives: pm_assumptions array (structured)
-    Output: what we know, what we don't, highest-risk assumption, next step.
-    """
-    problem = context.get("problem_statement", "")
-    metric = context.get("metric", "")
-    research_data = context.get("research_data", {})
-    user_segment = context.get("user_segment", "")
-    pm_assumptions = context.get("pm_assumptions", [])
+def create_synthesize_task(
+    agent: Agent,
+    prompt: str,
+    objectives: list[dict],
+    evidence_text: str,
+    mode_guidance: str,
+    mode: str = "quick_read",
+) -> Task:
+    objectives_text = "\n".join(
+        f"- {obj.get('title', '')}\n"
+        f"  Metric: {obj.get('metric', '')}\n"
+        f"  Target: {obj.get('target', '')}\n"
+        f"  Segments: {', '.join(obj.get('segmentIds', [])) or 'none specified'}\n"
+        f"  User stages: {', '.join(obj.get('lifecycleCohorts', [])) or 'none specified'}\n"
+        f"  Theory of success: {obj.get('theoryOfSuccess', '')}"
+        for obj in objectives
+    ) or "No specific objectives defined."
 
-    # Check what data we have
-    has_data = bool(research_data.get("snowflake_results") or
-                    research_data.get("survey_responses") or
-                    research_data.get("prototypes_tested") or
-                    research_data.get("qualitative"))
+    expected_output = (
+        "A structured synthesis that includes:\n"
+        "- SUBJECT: one-line summary of the key finding\n"
+        "- DETAILS: one short paragraph giving the important context behind the summary\n"
+        "- CONFIDENCE: high / medium / low\n"
+        "- READINESS: sufficient / partial / weak, with one sentence explaining why\n"
+        "- TOP FINDINGS: the top 3 most important observations in short, scannable bullets\n"
+        "- TOP NEEDS: the top 3 additional signals, risks, or validation needs in short, scannable bullets\n"
+        "- RECOMMENDATION: the clearest move to make now, tied to a segment + metric\n"
+        "- PHASE: which growth phase this belongs to — Learning phase, Scaling phase, Expansion phase, or Optimization phase — with one sentence of reasoning\n"
+        "- ASSUMPTIONS: what this analysis takes as given\n"
+        "- FINDINGS: 2-5 key patterns found in the evidence, each with:\n"
+        "  - Pattern description\n"
+        "  - Evidence references (which observations, sessions, or votes support this)\n"
+        "  - Segment relevance\n"
+        "  - User stage relevance\n"
+        "  - Confidence level for this specific pattern\n"
+        "- OBJECTIVE MAPPING: how findings connect to each business objective\n"
+        "- ADDITIONAL SIGNALS WORTH GATHERING: 1-3 specific missing inputs, why each matters, and likely source\n"
+        "- RECOMMENDATIONS: 1-3 concrete design recommendations, each tied to a specific objective\n"
+        "- NEXT STEPS: what should happen next to validate or act on these findings\n"
+        "- PRIORITIZATION NOTE: effort signal (low / medium / high) and whether this belongs "
+        "in the current cycle or needs more validation first — 1-2 lines only"
+    )
 
-    data_summary = ""
-    if has_data:
-        data_parts = []
-        if research_data.get("snowflake_results"):
-            data_parts.append("Quantitative")
-        if research_data.get("survey_responses"):
-            data_parts.append("Survey")
-        if research_data.get("prototypes_tested"):
-            data_parts.append("Prototype tests")
-        if research_data.get("qualitative"):
-            data_parts.append("Interviews")
-        data_summary = f"Data we have: {', '.join(data_parts)}"
-    else:
-        data_summary = "No data yet. Use discovery mode."
-
-    # Format PM assumptions for display
-    assumptions_str = ""
-    if pm_assumptions:
-        assumptions_str = "**PM's assumptions to pressure-test:**\n"
-        for i, assumption in enumerate(pm_assumptions, 1):
-            statement = assumption.get("statement", "")
-            risk = assumption.get("risk", "")
-            assumptions_str += f"{i}. [{risk}] {statement}\n"
-    else:
-        assumptions_str = "**PM's assumptions:** None provided"
-
-    description = f"""You are Research & Insights. Pressure-test these specific assumptions.
-
-{assumptions_str}
-
-**Your constraints:**
-Problem: {problem}
-Metric: {metric}
-User segment: {user_segment}
-{data_summary}
-
-**Your job:**
-1. For each HIGH-risk PM assumption: Confirm / Contradict / Inconclusive
-2. Rate confidence on findings: Known (behavior, multiple sources) / Probable (self-report) / Assumed (no data)
-3. Identify what we don't know (gaps tied to PM assumptions)
-4. Name the single highest-risk assumption that, if wrong, breaks the solution
-5. Specify next step: one concrete method, sample, or data source needed
-
-If no data: be explicit about what's assumed. Propose one specific research action (not "do more research").
-
-**CRITICAL:**
-- YOU MUST return valid JSON ONLY
-- No explanations, no markdown, no extra text
-- No preamble. No closing. JSON only."""
-
-    json_schema = """
-Output ONLY valid JSON (no markdown, no preamble):
-{
-  "what_we_know": [
-    {
-      "finding": "string",
-      "confidence": "Known | Probable | Assumed"
-    }
-  ],
-  "what_we_dont_know": ["string"],
-  "assumption_status": [
-    {
-      "assumption": "string",
-      "status": "confirm | contradict | inconclusive"
-    }
-  ],
-  "highest_risk_assumption": "string",
-  "next_step": "string"
-}
-"""
+    if mode == "quick_read":
+        expected_output = (
+            "A fast, scannable synthesis that includes only:\n"
+            "- SUBJECT: one-line summary of the key finding\n"
+            "- DETAILS: one short paragraph of context\n"
+            "- CONFIDENCE: high / medium / low\n"
+            "- READINESS: sufficient / partial / weak, with one sentence explaining why\n"
+            "- TOP FINDINGS: the top 3 most important observations in short bullets\n"
+            "- TOP NEEDS: the top 3 missing signals, risks, or validation needs in short bullets\n"
+            "- RECOMMENDATION: the clearest move to make now, tied to a segment + metric\n"
+            "- PHASE: which growth phase this belongs to — Learning phase, Scaling phase, Expansion phase, or Optimization phase — with one sentence of reasoning\n"
+            "- NEXT STEP: the most useful immediate action\n"
+            "- PRIORITIZATION NOTE: effort signal (low / medium / high) and whether this is "
+            "actionable now or needs more validation first — 1-2 lines only"
+        )
 
     return Task(
-        description=description + f"\n\n**OUTPUT FORMAT (JSON only):**\n{json_schema}",
-        expected_output=(
-            "Valid JSON with what_we_know array (with confidence levels), what_we_dont_know, "
-            "assumption_status for each HIGH-risk assumption, highest_risk_assumption, and next_step."
+        description=(
+            f"You are Research & Insights.\n\n"
+            f"ANALYSIS FOCUS: {prompt}\n\n"
+            f"BUSINESS OBJECTIVES TO MAP AGAINST:\n{objectives_text}\n\n"
+            f"AVAILABLE EVIDENCE:\n{evidence_text}\n\n"
+            f"{mode_guidance}\n"
+            f"Your job:\n"
+            f"1. Analyze the evidence using your two-pass method: what's in the data → what it likely means\n"
+            f"2. Map findings to the business objectives above\n"
+            f"3. State which segment each major finding is relevant to\n"
+            f"4. State which user stage each major finding is relevant to when applicable\n"
+            f"5. Determine which growth phase (Learning, Scaling, Expansion, Optimization) the recommendation belongs to based on the evidence and objective\n"
+            f"6. Label every finding with a confidence level (High/Medium/Low)\n"
+            f"7. State assumptions explicitly\n"
+            f"8. End with concrete recommendations tied to specific objectives\n\n"
+            f"Rules:\n"
+            f"- Ground synthesis in what the data actually says\n"
+            f"- Flag inferences vs direct findings\n"
+            f"- Distinguish pain points from satisficing (users adapting to broken things)\n"
+            f"- A directional insight with stated assumptions is better than silence\n"
+            f"- Never fabricate evidence. If data is thin, say so.\n"
+            f"- Always include segment + metric in the recommendation framing.\n"
+            f"- Include a short readiness judgment that explains whether the evidence is sufficient, partial, or weak.\n"
+            f"- Always include the next 1-3 signals that would most improve confidence.\n"
+            f"- Do not call external tools. Work only with the evidence provided in this prompt."
         ),
+        expected_output=expected_output,
         agent=agent,
     )

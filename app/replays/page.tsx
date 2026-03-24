@@ -340,45 +340,43 @@ export default function ReplaysPage() {
                               Top Friction Patterns
                             </p>
                           </div>
-                          <div style={{ display: "block", width: "100%", height: 140, overflow: "hidden" }}>
-                            <ChartContainer
-                              config={frictionChartConfig}
-                              className="h-[140px] w-full"
+                          <ChartContainer
+                            config={frictionChartConfig}
+                            className="h-[140px] w-full"
+                          >
+                            <BarChart
+                              data={synth.frictions.slice(0, 5)}
+                              layout="vertical"
+                              margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
                             >
-                              <BarChart
-                                data={synth.frictions.slice(0, 5)}
-                                layout="vertical"
-                                margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
+                              <XAxis type="number" hide />
+                              <YAxis
+                                type="category"
+                                dataKey="pattern"
+                                width={100}
+                                tick={{ fontSize: 10 }}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <ChartTooltip
+                                content={<ChartTooltipContent />}
+                              />
+                              <Bar
+                                dataKey="frequency"
+                                radius={[0, 4, 4, 0]}
                               >
-                                <XAxis type="number" hide />
-                                <YAxis
-                                  type="category"
-                                  dataKey="pattern"
-                                  width={100}
-                                  tick={{ fontSize: 10 }}
-                                  tickLine={false}
-                                  axisLine={false}
-                                />
-                                <ChartTooltip
-                                  content={<ChartTooltipContent />}
-                                />
-                                <Bar
-                                  dataKey="frequency"
-                                  radius={[0, 4, 4, 0]}
-                                >
-                                  {synth.frictions.slice(0, 5).map((f, i) => (
-                                    <Cell
-                                      key={i}
-                                      fill={
-                                        severityColor[f.severity] ||
-                                        "var(--chart-5)"
-                                      }
-                                    />
-                                  ))}
-                                </Bar>
-                              </BarChart>
-                            </ChartContainer>
-                          </div>
+                                {synth.frictions.slice(0, 5).map((f, i) => (
+                                  <Cell
+                                    key={i}
+                                    fill={
+                                      severityColor[f.severity] ||
+                                      "var(--chart-5)"
+                                    }
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ChartContainer>
                         </CardContent>
                       </Card>
                     )}

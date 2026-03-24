@@ -1,3 +1,5 @@
+import type { DataConfidenceState } from "@/lib/data-confidence";
+
 export type Phase = "setup" | "voting" | "revealed";
 
 export type MediaType = "none" | "image" | "figma-embed" | "excalidraw";
@@ -14,6 +16,8 @@ export interface ExplorationOption {
   rationale?: string;
   suggested?: boolean;
   suggestedBy?: string;
+  /** @deprecated Use mediaUrl instead */
+  imageUrl?: string;
 }
 
 export interface Reaction {
@@ -52,6 +56,16 @@ export interface Vote {
   effort?: EffortLevel;
   impact?: EffortLevel;
   createdAt: number;
+  /** @deprecated Use voterName instead */
+  participantName?: string;
+}
+
+export interface SessionValidation {
+  state: DataConfidenceState;
+  note?: string;
+  evidenceSourceOwner?: string;
+  evidenceSourceOrigin?: string;
+  evidenceSourceDate?: string;
 }
 
 export interface ExplorationSession {
@@ -59,6 +73,8 @@ export interface ExplorationSession {
   title: string;
   description: string;
   previewUrl?: string;
+  topic?: string;
+  hypothesis?: string;
   problem?: string;
   goal?: string;
   audience?: string;
@@ -70,6 +86,7 @@ export interface ExplorationSession {
   phase: Phase;
   creatorToken: string;
   createdAt: number;
+  validation?: SessionValidation;
 }
 
 // --- Supabase row types (snake_case, matching DB columns) ---
@@ -79,6 +96,8 @@ export interface VotingSessionRow {
   title: string;
   description: string;
   preview_url: string | null;
+  topic: string | null;
+  hypothesis: string | null;
   problem: string | null;
   goal: string | null;
   audience: string | null;
@@ -131,6 +150,8 @@ export function sessionFromRow(
     title: row.title,
     description: row.description ?? "",
     previewUrl: row.preview_url ?? undefined,
+    topic: row.topic ?? undefined,
+    hypothesis: row.hypothesis ?? undefined,
     problem: row.problem ?? undefined,
     goal: row.goal ?? undefined,
     audience: row.audience ?? undefined,

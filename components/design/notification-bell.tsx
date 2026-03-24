@@ -40,7 +40,7 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export function NotificationBell({ expanded }: { expanded: boolean }) {
+export function NotificationBell({ labelClass }: { labelClass: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -60,7 +60,20 @@ export function NotificationBell({ expanded }: { expanded: boolean }) {
   }, []);
 
   useEffect(() => {
-    fetchNotifications();
+    async function loadNotifications() {
+      try {
+        const vid = getVoterId();
+        const res = await fetch(`/api/design/notifications?limit=20&voterId=${encodeURIComponent(vid)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+      } catch {
+        // silently fail
+      }
+    }
+
+    void loadNotifications();
     intervalRef.current = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(intervalRef.current);
   }, [fetchNotifications]);
@@ -91,7 +104,7 @@ export function NotificationBell({ expanded }: { expanded: boolean }) {
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <button className="relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors w-full text-muted-foreground hover:text-foreground">
+        <button className="relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors w-full overflow-hidden text-muted-foreground hover:text-foreground">
           <div className="relative shrink-0">
             <Bell className="size-[18px]" />
             {unreadCount > 0 && (
@@ -100,7 +113,7 @@ export function NotificationBell({ expanded }: { expanded: boolean }) {
               </span>
             )}
           </div>
-          <span className={cn("text-sm", expanded ? "block" : "hidden md:block")}>
+          <span className={cn("text-sm", labelClass)}>
             Notifications
           </span>
         </button>

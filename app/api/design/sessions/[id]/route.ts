@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { verifySessionToken } from "@/app/lib/session";
-import { validateSessionUpdate } from "@/app/lib/input-validation";
 
 export async function GET(
   _request: Request,
@@ -10,20 +8,15 @@ export async function GET(
   const { id } = await params;
   const db = getSupabaseAdmin();
 
-  const [sessionRes, optionsRes, allVotesRes] = await Promise.all([
+  const [sessionRes, optionsRes, voteCountRes] = await Promise.all([
     db.from("voting_sessions").select("*").eq("id", id).single(),
     db.from("voting_options").select("*").eq("session_id", id).order("position"),
-    db.from("voting_votes").select("session_id, voter_id").eq("session_id", id),
+    db.rpc("get_vote_count", { p_session_id: id }),
   ]);
 
   if (sessionRes.error || !sessionRes.data) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
-
-  // Count distinct voters
-  const allVotes = allVotesRes.data ?? [];
-  const distinctVoters = new Set(allVotes.map((v) => v.voter_id));
-  const voteCount = distinctVoters.size;
 
   // During revealed phase, return all votes
   // During voting phase, return only the requesting voter's vote (for undo)
@@ -52,7 +45,7 @@ export async function GET(
     session: sessionRes.data,
     options: optionsRes.data ?? [],
     votes,
-    voteCount,
+    voteCount: voteCountRes.data ?? 0,
   });
 }
 
@@ -61,56 +54,30 @@ function isValidAdmin(adminPassword: string | undefined): boolean {
   return !!correct && !!adminPassword && adminPassword === correct;
 }
 
-function extractSessionToken(request: Request): string | null {
-  const cookieHeader = request.headers.get("cookie") || "";
-  const cookies = cookieHeader.split(";");
-  for (const cookie of cookies) {
-    const trimmed = cookie.trim();
-    if (trimmed.startsWith("sessionToken=")) {
-      return trimmed.substring("sessionToken=".length);
-    }
-  }
-  return null;
-}
-
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const body = await request.json();
-  const validation = validateSessionUpdate(body);
-  if (!validation.valid) {
-    return NextResponse.json(
-      { error: "Validation failed", details: validation.errors },
-      { status: 400 }
-    );
-  }
   const { creatorToken, adminPassword, phase, participantCount } = body;
 
-  // Check sessionToken first (preferred method)
-  const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
-
-  // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
-  if (!sessionValid && !creatorToken && !adminPassword) {
-    return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
+  if (!creatorToken && !adminPassword) {
+    return NextResponse.json({ error: "Missing creatorToken" }, { status: 401 });
   }
 
   const db = getSupabaseAdmin();
 
-  // If sessionToken valid, admin has full access; otherwise check creatorToken/adminPassword
-  if (!sessionValid) {
-    if (!isValidAdmin(adminPassword)) {
-      const { data: session } = await db
-        .from("voting_sessions")
-        .select("creator_token")
-        .eq("id", id)
-        .single();
+  // Admin password bypasses creator check
+  if (!isValidAdmin(adminPassword)) {
+    const { data: session } = await db
+      .from("voting_sessions")
+      .select("creator_token")
+      .eq("id", id)
+      .single();
 
-      if (!session || session.creator_token !== creatorToken) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      }
+    if (!session || session.creator_token !== creatorToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
   }
 
@@ -147,29 +114,22 @@ export async function DELETE(
   const body = await request.json();
   const { creatorToken, adminPassword } = body;
 
-  // Check sessionToken first (preferred method)
-  const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
-
-  // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
-  if (!sessionValid && !creatorToken && !adminPassword) {
-    return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
+  if (!creatorToken && !adminPassword) {
+    return NextResponse.json({ error: "Missing creatorToken" }, { status: 401 });
   }
 
   const db = getSupabaseAdmin();
 
-  // If sessionToken valid, admin has full access; otherwise check creatorToken/adminPassword
-  if (!sessionValid) {
-    if (!isValidAdmin(adminPassword)) {
-      const { data: session } = await db
-        .from("voting_sessions")
-        .select("creator_token")
-        .eq("id", id)
-        .single();
+  // Admin password bypasses creator check
+  if (!isValidAdmin(adminPassword)) {
+    const { data: session } = await db
+      .from("voting_sessions")
+      .select("creator_token")
+      .eq("id", id)
+      .single();
 
-      if (!session || session.creator_token !== creatorToken) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      }
+    if (!session || session.creator_token !== creatorToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
   }
 

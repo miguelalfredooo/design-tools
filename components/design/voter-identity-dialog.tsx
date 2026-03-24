@@ -10,9 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CarrierInput } from "@/components/ui/carrier-input";
-import { CarrierTextarea } from "@/components/ui/carrier-textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight } from "lucide-react";
 
 interface VoterIdentityDialogProps {
@@ -46,12 +46,12 @@ export function VoterIdentityDialog({
           <DialogDescription>
             {context === "comment"
               ? "Enter your name to leave a comment."
-              : "Enter your name to cast your vote. Each participant can only vote once."}
+              : "Enter your name to participate. Each participant can only vote once."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <Label htmlFor="voter-name">Name</Label>
-          <CarrierInput
+          <Input
             id="voter-name"
             placeholder="e.g. Alice"
             value={name}
@@ -61,7 +61,6 @@ export function VoterIdentityDialog({
                 onSubmit(trimmed, comment.trim() || undefined);
               }
             }}
-            designSize="md"
           />
           {isDuplicate && (
             <p className="text-sm text-destructive">
@@ -71,13 +70,13 @@ export function VoterIdentityDialog({
         </div>
         <div className="space-y-2">
           <Label htmlFor="voter-comment">Leave a comment (optional)</Label>
-          <CarrierTextarea
+          <Textarea
             id="voter-comment"
             placeholder="Share your thoughts on this choice..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
-            designSize="sm"
+            className="resize-none"
           />
         </div>
         <DialogFooter>

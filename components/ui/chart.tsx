@@ -5,6 +5,18 @@ import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
 
+type ChartPayloadItem = {
+  type?: string
+  name?: string
+  dataKey?: string | number
+  value?: number | string
+  color?: string
+  payload?: {
+    fill?: string
+    [key: string]: unknown
+  }
+}
+
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
@@ -39,7 +51,6 @@ function ChartContainer({
   className,
   children,
   config,
-  style,
   ...props
 }: React.ComponentProps<"div"> & {
   config: ChartConfig
@@ -50,54 +61,19 @@ function ChartContainer({
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
-  // Extract dimensions from className if present (h-[Xpx] w-[Ypx] patterns)
-  const heightMatch = className?.match(/h-\[([^\]]+)\]/)
-  const widthMatch = className?.match(/w-\[([^\]]+)\]/)
-
-  // Parse numeric height for minHeight prop
-  const heightValue = heightMatch ? parseInt(heightMatch[1]) : undefined
-
-  const inlineStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: "center",
-    width: widthMatch ? widthMatch[1] : "100%",
-    height: heightMatch ? heightMatch[1] : undefined,
-    ...style,
-  }
-
-  React.useEffect(() => {
-    // Suppress Recharts ResponsiveContainer dimension warning in development
-    if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-      const originalWarn = console.warn
-      console.warn = (...args: unknown[]) => {
-        if (
-          typeof args[0] === "string" &&
-          (args[0].includes("width(-1)") || args[0].includes("height(-1)"))
-        ) {
-          return
-        }
-        originalWarn(...args)
-      }
-      return () => {
-        console.warn = originalWarn
-      }
-    }
-  }, [])
-
   return (
     <ChartContext.Provider value={{ config }}>
       <div
         data-slot="chart"
         data-chart={chartId}
         className={cn(
-          "text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
+          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
           className
         )}
-        style={inlineStyle}
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer width="100%" height="100%" minHeight={heightValue}>
+        <RechartsPrimitive.ResponsiveContainer>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>
@@ -209,9 +185,9 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
-        {payload
-          .filter((item: any) => item.type !== "none")
-          .map((item: any, index: number) => {
+        {(payload as ChartPayloadItem[])
+          .filter((item) => item.type !== "none")
+          .map((item, index: number) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
             const indicatorColor = color || item.payload.fill || item.color
@@ -288,8 +264,13 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-}: any) {
+}: {
+  className?: string
+  hideIcon?: boolean
+  payload?: ChartPayloadItem[]
+  verticalAlign?: "top" | "bottom"
+  nameKey?: string
+}) {
   const { config } = useChart()
 
   if (!payload?.length) {
@@ -305,8 +286,8 @@ function ChartLegendContent({
       )}
     >
       {payload
-        .filter((item: any) => item.type !== "none")
-        .map((item: any) => {
+        .filter((item) => item.type !== "none")
+        .map((item) => {
           const key = `${nameKey || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
 

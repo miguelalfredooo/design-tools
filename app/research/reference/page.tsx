@@ -123,7 +123,6 @@ const activityTimeline = [
 
 export default function ResearchReferencePage() {
   const maxMentions = Math.max(...themes.map((t) => t.mentions));
-  const maxFrequency = Math.max(...surfaceAreas.map((a) => a.frequency));
 
   return (
     <div className="flex justify-center min-w-0 pt-6 pb-12 px-4">

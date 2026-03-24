@@ -1,0 +1,82 @@
+[
+  {
+    "id": "a-post-scheduler-that-queues-content-in-advance-",
+    "title": "A post scheduler that queues content in advance so creators maintain cadence during offline periods",
+    "problem": "Creators publish without scheduling capability — when they travel, attend conferences, or have busy production weeks, community engagement drops sharply and they resort to manual workarounds like copying post text into Google Docs.",
+    "idea": "Creators open a simple calendar picker in the composer, select a date and time, and tap 'Schedule.' The post queues and publishes automatically at that moment. A light timeline view shows all scheduled posts — creators can reorder them or reschedule with a single tap. No complex batch UI or calendar integration; just a durable queue that publishes reliably while they're offline.",
+    "why": "Consistent creator presence is the habit trigger for readers — silence breaks the return-visit loop permanently. If creators can pre-commit their content, engagement stays alive even during forced absences, and the reader experience remains uninterrupted.",
+    "risk": "If scheduled posts feel disconnected from real-time community context, creators may schedule content that becomes irrelevant or tone-deaf by publish time and lose trust in the feature.",
+    "metric": "Creator posting frequency · Creator WAU ratio · Community engagement continuity during creator travel windows",
+    "moduleRef": "Scheduled Posts"
+  },
+  {
+    "id": "a-single-tap-mobile-reply-that-lives-in-notifica",
+    "title": "A single-tap mobile reply that lives in notifications so creators can respond without navigating back to the post",
+    "problem": "Creators attempted to reply to reader comments from mobile but encounter unresponsive text inputs and silent form failures, causing them to abandon replies entirely and miss substantive reader interactions.",
+    "idea": "When a creator taps a notification about a comment or thread, a reply input appears inline — no navigation required. They type their response and tap send. The reply posts directly under that comment. No loading states, no form submission surprises — just immediate, reliable composition. If it fails, a visible error and a draft save appear, not silence.",
+    "why": "Mobile is where creators are — not at a desk, not in a dashboard. The friction of navigation multiplies when the interaction is already fragmented. Embedding response capability in the notification collapses the journey from 'I see this' to 'I replied' into one moment.",
+    "risk": "If the reply composer is too constrained or lacks formatting options, creators may feel it's dismissive of substantive conversations and prefer not to use it.",
+    "metric": "Creator reply rate · Reader perception of responsiveness · Comment-to-reply conversion rate",
+    "moduleRef": "Post Composer"
+  },
+  {
+    "id": "a-post-edit-window-that-lets-creators-fix-errors",
+    "title": "A post edit window that lets creators fix errors within 24 hours without support escalation",
+    "problem": "Creators published posts with typos or errors and had no way to edit them, forcing 40+ minutes of support contact and manual deletion-then-repost cycles.",
+    "idea": "After publishing, a post shows an 'Edit' button for the first 24 hours. Creators tap it, revise the text or headline, and save. The updated version publishes immediately with a tiny 'edited' label visible only to readers who saw the original. Comment threads remain intact. After 24 hours, the edit button disappears and posts are locked.",
+    "why": "Publishing is irreversible in people's mental model — but small fixes should not demand the cognitive or temporal cost of deletion. A bounded edit window respects the creator's moment of regret without opening the door to revisionist history or comment manipulation.",
+    "risk": "If the edit window is too long or lacks visibility, readers may reread posts expecting the original and feel deceived by the change, damaging trust in creator transparency.",
+    "metric": "Creator time-to-correct errors · Support ticket volume for post deletion · Creator confidence in publishing",
+    "moduleRef": "Post Composer"
+  },
+  {
+    "id": "a-weekly-performance-snapshot-showing-which-post",
+    "title": "A weekly performance snapshot showing which posts drove real engagement, surfaced in email so creators see it without visiting a dashboard",
+    "problem": "Creators have no visibility into which posts are working — they rely on manual scrolling to count comments or wait for weekly email digests that arrive too infrequently, leaving them unable to make data-driven decisions about what to repeat.",
+    "idea": "Every Monday morning, a brief email arrives with three cards: 'Your top post this week' (ranked by comment count and reader replies), 'What clicked' (a plain annotation like 'This post drove 3x more replies than your typical post'), and 'Keep watching' (a post that started slow but is gaining traction). No percentages, no dashboards — just the three moments that matter. Tapping any card shows an engagement curve vs. the creator's median, then returns them to their community.",
+    "why": "Creators do not exist in dashboards — they exist in email, notifications, and their community feed. Pushing insight into their existing attention channels respects their workflow and makes patterns legible without asking them to become analysts.",
+    "risk": "If the snapshot is too simplified or cherry-picks misleading data, creators may over-correct toward trending topics and lose their authentic voice, damaging long-term reader trust.",
+    "metric": "Creator posting frequency · Content topic consistency · Data-driven decision rate (measured via creator behavior change post-snapshot)",
+    "moduleRef": "Scheduled Posts"
+  },
+  {
+    "id": "a-smart-notification-that-surfaces-meaningful-co",
+    "title": "A smart notification that surfaces meaningful conversations — not volume, but depth — so creators know when a moment is worth their attention",
+    "problem": "Creators receive overwhelming notifications for every individual like or recent activity, causing them to disable alerts entirely and miss substantive reader comments and high-engagement threads that actually deserve their time.",
+    "idea": "Creators open notification settings and toggle 'Smart Alerts' on. They then receive only three types of notifications: (1) A reader's first substantive comment on one of their posts (anything over 50 words), (2) A thread where 5+ people have replied to each other (conversation momentum), and (3) A comment on their most recent post within the first 6 hours (early signal of traction). Each notification is sparse — creator name, post title, why we're surfacing this. No vanity metrics. They tap to jump directly into that conversation.",
+    "why": "Signal quality is a finite resource — creators will ignore alerts if they're mostly noise. High-threshold notification rules require creators to trust the filter, which only works if the system earns it by being ruthlessly selective about what qualifies as 'worth interrupting for.'",
+    "risk": "If the thresholds are too high, meaningful but smaller conversations (two people having a genuine exchange) get filtered out and creators lose connection to their quieter, more thoughtful readers.",
+    "metric": "Creator notification engagement rate · Creator reply rate to flagged conversations · Creator notification fatigue (self-reported or via re-enable rate)",
+    "moduleRef": "Engagement Prompts"
+  },
+  {
+    "id": "a-pinned-post-carousel-at-the-top-of-the-communi",
+    "title": "A pinned post carousel at the top of the community feed so new and returning readers see the creator's best work first",
+    "problem": "Creators asked for a way to control what new and returning visitors see first, but no pinning or featuring capability exists — readers land on an unstructured chronological feed and may miss the creator's strongest content.",
+    "idea": "Creators open their community settings and select up to three posts to pin. These appear in a sticky carousel at the top of the feed, above the chronological stream. Readers can scroll past it or tap into any pinned post. When a lapsed reader returns after 2+ weeks away, the pinned section highlights what's changed ('New discussion this week') or which posts are still resonating. After readers scroll past the carousel once, it becomes a standard card that doesn't steal vertical space on subsequent visits.",
+    "why": "New and lapsed readers have zero context — they need a handhold into the community. Curated entry points reduce disorientation and communicate where creator attention has been focused, making the community feel intentional rather than abandoned.",
+    "risk": "If pinned posts feel too 'advertised' or curated rather than genuinely recommended, returning readers may feel the community is staged and less authentic than they remember.",
+    "metric": "Reader return visit rate (lapsed readers) · New reader conversion rate · Engagement on pinned posts vs. chronological feed posts",
+    "moduleRef": "Pin and Banner Posts"
+  },
+  {
+    "id": "an-approval-flow-for-team-drafted-posts-so-deleg",
+    "title": "An approval flow for team-drafted posts so delegated content publishes under the creator's name with creator consent",
+    "problem": "Creator team members draft and publish posts without approval gates — some posts go live unsanctioned, others post under the team member's name and confuse readers who expect the creator's voice.",
+    "idea": "A team member drafts a post and marks it 'Ready for Review.' It enters a creator queue as a card showing the draft text, scheduled time (if any), and author name. The creator can approve it (publishes under their name), request changes (sends feedback inline with a re-review step), or reject it (post is discarded). Approved posts show a small byline like 'Written by [team member name], posted by [creator name]' so readers understand the delegation without confusion. The creator retains full editorial control and visibility.",
+    "why": "Authority over community voice cannot be delegated — creators must see and consent to what speaks for them. A lightweight approval gate protects creator identity while enabling team scalability and maintains the reader's trust that posts are author-endorsed, not publisher-inserted.",
+    "risk": "If the approval flow adds too much friction or requires multiple back-and-forths, team members may bypass it or creators may approve without reading carefully, defeating the control mechanism entirely.",
+    "metric": "Team delegation rate · Creator time spent on moderation tasks · Approval rejection rate · Reader perception of voice consistency",
+    "moduleRef": "Team Posting with Attribution"
+  },
+  {
+    "id": "an-onboarding-checklist-that-sets-performance-be",
+    "title": "An onboarding checklist that sets performance benchmarks for week 4, week 8, and month 3 so new creators know what healthy looks like",
+    "problem": "New creators complete onboarding without clarity on what success looks like or which metrics matter — they don't know whether a community is thriving or stagnating until much later.",
+    "idea": "After completing the basic setup, new creators see a 'Growth Map' checklist with concrete milestones: 'Week 4: Publish 4 posts, aim for 20+ comments per post' (or a benchmark based on creator's niche), 'Week 8: Build a core of 10 active commenters,' 'Month 3: Aim for 2 comments per post and 40% reader return rate.' Each milestone is linked to a guide — not a lesson, just a 3-sentence explanation of why that metric matters and one tactic to move it. The checklist shows progress in real time as milestones are hit.",
+    "why": "Early-stage creators operate in a vacuum without institutional knowledge — they need staged guidance that normalizes what a healthy community looks like at each inflection point. Benchmarks provide both aspiration and permission to ignore vanity metrics that don't matter.",
+    "risk": "If benchmarks are too aggressive or don't reflect creator niche realities, new creators may feel discouraged and abandon the platform before finding their rhythm.",
+    "metric": "Creator retention at week 4, week 8, month 3 · Creator confidence (self-reported in first 30 days) · Posting consistency in early stages",
+    "moduleRef": "Scheduled Posts"
+  }
+]

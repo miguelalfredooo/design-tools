@@ -1,10 +1,10 @@
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { DesignOpsClient } from "@/components/design/design-ops-client";
+import { Suspense } from 'react'
+import { CarrierShell } from '@/components/design/carrier-shell'
 
 export default function DesignOpsPage() {
   return (
-    <TooltipProvider>
-      <DesignOpsClient />
-    </TooltipProvider>
-  );
+    <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
+      <CarrierShell />
+    </Suspense>
+  )
 }

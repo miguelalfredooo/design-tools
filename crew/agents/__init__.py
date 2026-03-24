@@ -1,3 +1,3 @@
-from .pm import create_pm
+from .design_strategy import create_design_strategy
 from .research_insights import create_research_insights
-from .product_design import create_product_design
+from .design_directions import create_design_directions

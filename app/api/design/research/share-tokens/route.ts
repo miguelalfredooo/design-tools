@@ -19,7 +19,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const db = getSupabaseAdmin();
-  const { createdBy } = await req.json();
+  const { createdBy, context, projectId } = await req.json();
 
   // Expires in 30 days by default
   const expiresAt = new Date();
@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
     .insert({
       created_by: createdBy || null,
       expires_at: expiresAt.toISOString(),
+      context: context || null,
+      project_id: projectId || null,
     })
     .select()
     .single();

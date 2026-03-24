@@ -6,12 +6,10 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ChevronDown,
-  ImagePlus,
   Loader2,
   Plus,
   Sparkles,
   Users,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -21,6 +19,8 @@ import { generateId } from "@/lib/design-utils";
 import type { MediaType } from "@/lib/design-types";
 import { Button } from "@/components/ui/button";
 import { DraftOptionCard } from "@/components/design/draft-option-card";
+import { LiveDraftHeaderFields } from "@/components/design/live-draft-header-fields";
+import { SessionBriefInputs } from "@/components/design/session-brief-inputs";
 
 interface OptionDraft {
   key: string;
@@ -54,6 +54,8 @@ export default function NewSessionPage() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [participantCount, setParticipantCount] = useState(3);
   const [showBrief, setShowBrief] = useState(true);
+  const [topic, setTopic] = useState("");
+  const [hypothesis, setHypothesis] = useState("");
   const [problem, setProblem] = useState("");
   const [goal, setGoal] = useState("");
   const [audience, setAudience] = useState("");
@@ -70,15 +72,6 @@ export default function NewSessionPage() {
 
   function removeOption(key: string) {
     setOptions((prev) => prev.filter((o) => o.key !== key));
-  }
-
-  function loadRaptiveTemplate() {
-    setTitle("Raptive Creator Engagement");
-    setDescription("Give creators visibility and control to drive consistent posting and community growth");
-    setProblem("Creators are underengaged — no visibility into what's working, no tools to maintain presence efficiently. Reader retention and pageview revenue suffer when creators go silent.");
-    setGoal("Give creators visibility and control so the community becomes a place they're invested in — driving consistent posting, meaningful engagement, and measurable pageview lift.");
-    setAudience("Content creators on Raptive Community + their team members who manage presence on their behalf");
-    setConstraints("Legal review needed for behavioral data · Authenticity attribution non-negotiable · No advertiser conflicts · Conservative prompt defaults · 6–8 creator interviews required before sprint");
   }
 
   function updateOption(key: string, field: keyof OptionDraft, value: string) {
@@ -108,11 +101,13 @@ export default function NewSessionPage() {
         })),
         previewUrl.trim() || undefined,
         {
+          topic: topic.trim() || undefined,
+          hypothesis: hypothesis.trim() || undefined,
           problem: problem.trim() || undefined,
           goal: goal.trim() || undefined,
           audience: audience.trim() || undefined,
           constraints: constraints.trim() || undefined,
-        }
+        },
       );
       toast.success(`Created "${session.title}"`);
       router.push(`/explorations/${session.id}`);
@@ -135,29 +130,28 @@ export default function NewSessionPage() {
             Home
           </Link>
         </Button>
-        <Button variant="outline" size="sm" onClick={loadRaptiveTemplate}>
-          Load Raptive Template
-        </Button>
       </div>
 
       {/* Header — editable title & description inline */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-1 flex-1 min-w-0">
-            <input
-              type="text"
-              placeholder="Session title..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+            <LiveDraftHeaderFields
+              titleId="new-session-title"
+              descriptionId="new-session-description"
+              titleLabel="Session title"
+              descriptionLabel="Description"
+              titlePlaceholder="Session title..."
+              descriptionPlaceholder="Proposed solution or concept summary for voters..."
+              titleValue={title}
+              descriptionValue={description}
+              onTitleChange={setTitle}
+              onDescriptionChange={setDescription}
+              descriptionRows={1}
+              labelMode="sr-only"
+              density="inline"
+              emphasis="hero"
               autoFocus
-              className="text-2xl font-bold tracking-tight bg-transparent border-none outline-none placeholder:text-muted-foreground/40 w-full"
-            />
-            <textarea
-              placeholder="Brief description for voters..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={1}
-              className="text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40 w-full resize-none text-base"
             />
           </div>
         </div>
@@ -178,29 +172,26 @@ export default function NewSessionPage() {
             />
           </button>
           {showBrief && (
-            <div className="grid gap-3 mt-8 grid-cols-1 sm:grid-cols-2 w-full">
-              {[
-                { key: "problem", label: "Problem", placeholder: "What problem does this solve?", value: problem, set: setProblem },
-                { key: "goal", label: "Goal", placeholder: "What's the desired outcome?", value: goal, set: setGoal },
-                { key: "audience", label: "Audience", placeholder: "Who is this for?", value: audience, set: setAudience },
-                { key: "constraints", label: "Constraints", placeholder: "Any limitations?", value: constraints, set: setConstraints },
-              ].map((field) => (
-                <div key={field.key} className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {field.label}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder={field.placeholder}
-                    value={field.value}
-                    onChange={(e) => field.set(e.target.value)}
-                    className="text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/30 w-full"
-                  />
-                </div>
-              ))}
+            <div className="mt-5">
+              <SessionBriefInputs
+                topic={topic}
+                hypothesis={hypothesis}
+                goal={goal}
+                problem={problem}
+                audience={audience}
+                constraints={constraints}
+                onTopicChange={setTopic}
+                onHypothesisChange={setHypothesis}
+                onGoalChange={setGoal}
+                onProblemChange={setProblem}
+                onAudienceChange={setAudience}
+                onConstraintsChange={setConstraints}
+                fieldClassName="text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/30 w-full"
+              />
             </div>
           )}
         </div>
+
       </div>
 
       {/* Preview URL */}

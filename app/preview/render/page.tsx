@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import { Code2, ExternalLink, Copy, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,14 +9,11 @@ import { toast } from "sonner";
 const PREVIEW_STORAGE_KEY = "design-tools:latest-html";
 
 export default function RenderPreviewPage() {
-  const [html, setHtml] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(PREVIEW_STORAGE_KEY);
-    setHtml(stored);
-    setLoaded(true);
-  }, []);
+  const [html, setHtml] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(PREVIEW_STORAGE_KEY);
+  });
+  const loaded = true;
 
   function handleCopy() {
     if (!html) return;
@@ -70,9 +68,7 @@ export default function RenderPreviewPage() {
               </p>
             </div>
             <Button variant="outline" asChild>
-              <a href="/preview/embed">
-                Go to Figma Import
-              </a>
+              <Link href="/preview/embed">Go to Figma Import</Link>
             </Button>
           </div>
         </div>

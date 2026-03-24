@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Trash2, MessageCircle, ChevronDown } from "lucide-react";
+import { Trash2, ChevronDown } from "lucide-react";
 import type { SpatialComment } from "@/lib/design-types";
 import { getInitials, getVoterColor } from "@/lib/design-utils";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,6 @@ function DotTooltip({
   canDelete,
   onDelete,
   onClose,
-  containerRect,
   dotX,
   dotY,
 }: {
@@ -35,7 +34,6 @@ function DotTooltip({
   canDelete: boolean;
   onDelete: () => void;
   onClose: () => void;
-  containerRect: DOMRect;
   dotX: number;
   dotY: number;
 }) {
@@ -63,7 +61,7 @@ function DotTooltip({
     };
   }, [onClose]);
 
-  const elapsed = Date.now() - comment.createdAt;
+  const elapsed = new Date().getTime() - comment.createdAt;
   const timeAgo =
     elapsed < 60_000 ? "just now" :
     elapsed < 3_600_000 ? `${Math.floor(elapsed / 60_000)}m ago` :
@@ -205,11 +203,9 @@ function SpatialDot({
 }) {
   const color = getVoterColor(comment.voterId);
   const isSelected = selectedId === comment.id;
-  const containerRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
-      ref={containerRef}
       className="absolute z-20"
       style={{
         left: `${comment.xPct}%`,
@@ -236,7 +232,7 @@ function SpatialDot({
         {getInitials(comment.voterName)}
       </button>
 
-      {isSelected && containerRef.current && (
+      {isSelected && (
         <DotTooltip
           comment={comment}
           canDelete={canDelete}
@@ -245,7 +241,6 @@ function SpatialDot({
             onSelect(null);
           }}
           onClose={() => onSelect(null)}
-          containerRect={containerRef.current.getBoundingClientRect()}
           dotX={comment.xPct}
           dotY={comment.yPct}
         />

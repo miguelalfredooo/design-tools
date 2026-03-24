@@ -1,0 +1,5 @@
+# Example env files and test assertions - not actual secrets
+crew/.env.example
+docs/supabase-setup.md
+test/openai-synthesis-provider.test.mjs
+test/supabase-setup-docs.test.mjs

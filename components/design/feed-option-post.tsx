@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Trophy } from "lucide-react";
-import type { ExplorationOption, Phase } from "@/lib/design-types";
+import type { ExplorationOption } from "@/lib/design-types";
 import { Badge } from "@/components/ui/badge";
 import { getInitials } from "@/lib/design-utils";
 import { OptionMedia } from "@/components/design/option-media";
@@ -10,11 +10,10 @@ import { OptionMedia } from "@/components/design/option-media";
 interface FeedOptionPostProps {
   option: ExplorationOption;
   sessionId: string;
-  phase: Phase;
   isWinner?: boolean;
 }
 
-export function FeedOptionPost({ option, sessionId, phase, isWinner }: FeedOptionPostProps) {
+export function FeedOptionPost({ option, sessionId, isWinner }: FeedOptionPostProps) {
   return (
     <div className="rounded-xl border bg-card p-4">
       {/* Media */}

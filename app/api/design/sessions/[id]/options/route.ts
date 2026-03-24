@@ -1,23 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-import { verifySessionToken } from "@/app/lib/session";
-import { validateOptionInput } from "@/app/lib/input-validation";
 
 function isValidAdmin(adminPassword: string | undefined): boolean {
   const correct = process.env.DESIGN_TOOLS_PASSWORD;
   return !!correct && !!adminPassword && adminPassword === correct;
-}
-
-function extractSessionToken(request: Request): string | null {
-  const cookieHeader = request.headers.get("cookie") || "";
-  const cookies = cookieHeader.split(";");
-  for (const cookie of cookies) {
-    const trimmed = cookie.trim();
-    if (trimmed.startsWith("sessionToken=")) {
-      return trimmed.substring("sessionToken=".length);
-    }
-  }
-  return null;
 }
 
 export async function POST(
@@ -26,22 +12,11 @@ export async function POST(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
-  const validation = validateOptionInput(body);
-  if (!validation.valid) {
-    return NextResponse.json(
-      { error: "Validation failed", details: validation.errors },
-      { status: 400 }
-    );
-  }
   const { title, description, mediaType, mediaUrl, creatorToken, adminPassword, rationale, suggested, suggestedBy } = body;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "Missing title" }, { status: 400 });
   }
-
-  // Check sessionToken first (preferred method)
-  const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
 
   const db = getSupabaseAdmin();
 
@@ -55,7 +30,7 @@ export async function POST(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const isAdmin = sessionValid || isValidAdmin(adminPassword);
+  const isAdmin = isValidAdmin(adminPassword);
   const isCreator = isAdmin || (creatorToken && session.creator_token === creatorToken);
   const isSuggestion = suggested === true && suggestedBy;
 
@@ -111,26 +86,10 @@ export async function PATCH(
 ) {
   const { id: sessionId } = await params;
   const body = await request.json();
-  const validation = validateOptionInput(body);
-  if (!validation.valid) {
-    return NextResponse.json(
-      { error: "Validation failed", details: validation.errors },
-      { status: 400 }
-    );
-  }
   const { optionId, creatorToken, adminPassword, title, description, mediaType, mediaUrl } = body;
 
-  if (!optionId) {
-    return NextResponse.json({ error: "Missing optionId" }, { status: 400 });
-  }
-
-  // Check sessionToken first (preferred method)
-  const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
-
-  // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
-  if (!sessionValid && !creatorToken && !adminPassword) {
-    return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
+  if (!optionId || (!creatorToken && !adminPassword)) {
+    return NextResponse.json({ error: "Missing optionId or authorization" }, { status: 400 });
   }
 
   const db = getSupabaseAdmin();
@@ -145,8 +104,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  // If sessionToken valid, admin has full access; otherwise check creatorToken/adminPassword
-  if (!sessionValid && !isValidAdmin(adminPassword) && session.creator_token !== creatorToken) {
+  if (!isValidAdmin(adminPassword) && session.creator_token !== creatorToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -181,17 +139,8 @@ export async function DELETE(
   const body = await request.json();
   const { optionId, creatorToken, adminPassword } = body;
 
-  if (!optionId) {
-    return NextResponse.json({ error: "Missing optionId" }, { status: 400 });
-  }
-
-  // Check sessionToken first (preferred method)
-  const sessionToken = extractSessionToken(request);
-  const sessionValid = sessionToken ? (await verifySessionToken(sessionToken)).valid : false;
-
-  // Allow if: sessionToken valid OR (creatorToken OR adminPassword)
-  if (!sessionValid && !creatorToken && !adminPassword) {
-    return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
+  if (!optionId || (!creatorToken && !adminPassword)) {
+    return NextResponse.json({ error: "Missing optionId or creatorToken" }, { status: 400 });
   }
 
   const db = getSupabaseAdmin();
@@ -207,8 +156,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  // If sessionToken valid, admin has full access; otherwise check creatorToken/adminPassword
-  if (!sessionValid && !isValidAdmin(adminPassword) && session.creator_token !== creatorToken) {
+  if (!isValidAdmin(adminPassword) && session.creator_token !== creatorToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

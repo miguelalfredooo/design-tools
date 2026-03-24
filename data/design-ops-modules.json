@@ -1,0 +1,66 @@
+[
+  {
+    "id": "mod-ct-1",
+    "name": "Creator Research — Sprint 0",
+    "status": "not_started",
+    "nextAction": "Build interview guide; recruit 6–8 creators across activity tiers",
+    "detail": "Validate which performance signals creators actually want vs. what we assume. Understand how creators decide when a conversation is worth joining and whether intelligent engagement prompts feel helpful or intrusive. 6–8 interviews planned before any P0 capability goes into design.",
+    "createdAt": "2026-03-11T09:00:00.000Z"
+  },
+  {
+    "id": "mod-ct-2",
+    "name": "Analytics Data Audit",
+    "status": "not_started",
+    "nextAction": "Confirm with data and eng what behavioral signals are available in Snowflake",
+    "detail": "Establish what's buildable for the performance dashboard before committing to scope. Snowflake integration requirements must be confirmed. Until this audit is complete, dashboard design cannot begin — we don't know what data we have.",
+    "createdAt": "2026-03-11T09:05:00.000Z"
+  },
+  {
+    "id": "mod-ct-3",
+    "name": "Performance Dashboard",
+    "status": "blocked",
+    "blockedReason": "Blocked on data audit (Module 2) and creator research (Module 1) — design cannot begin without both",
+    "detail": "Give creators visibility into which posts drive engagement and pageviews. Substack, Patreon, and Creator.co offer this as table stakes. Raptive Community currently has none. Target: creators make better content decisions; stronger posts get repeated. P0 capability — cannot ship creator tools without it.",
+    "createdAt": "2026-03-11T09:10:00.000Z"
+  },
+  {
+    "id": "mod-ct-4",
+    "name": "Scheduled Posts",
+    "status": "not_started",
+    "nextAction": "Design scheduling UX; align with eng on calendar and queue implementation",
+    "detail": "Enable consistent posting cadence without requiring real-time creator presence. Creators who travel, produce, or work in focused sprints need to front-load posts. P0 requirement — pairs with the performance dashboard as the core creator consistency unlock.",
+    "createdAt": "2026-03-11T09:15:00.000Z"
+  },
+  {
+    "id": "mod-ct-5",
+    "name": "Pin and Banner Posts",
+    "status": "not_started",
+    "nextAction": "Define creator controls and reader-facing display behavior for pinned content",
+    "detail": "Allow creators to surface high-value content persistently. Creators currently re-post manually to keep content visible — a pinning capability removes this workaround and lets creator intent shape what readers encounter first. P0 requirement.",
+    "createdAt": "2026-03-11T09:20:00.000Z"
+  },
+  {
+    "id": "mod-ct-6",
+    "name": "Engagement Prompts",
+    "status": "blocked",
+    "blockedReason": "Blocked on Sprint 0 research — prompt tolerance and workflow fit not yet validated",
+    "detail": "Surface high-value conversation moments without requiring creators to monitor the community manually. Prompts must be targeted to quality, not volume — one bad recommendation undermines the entire feature. Do not design or build until creator interviews confirm appetite and acceptable cadence defaults.",
+    "createdAt": "2026-03-11T09:25:00.000Z"
+  },
+  {
+    "id": "mod-ct-7",
+    "name": "Lapsed Reader Signals",
+    "status": "blocked",
+    "blockedReason": "Blocked on legal review — behavioral data use must be cleared before design begins",
+    "detail": "Enable passive creator re-engagement tied to moments of normal platform activity. Readers leave silently with no recovery mechanism. Surfacing lapsed reader signals to creators could reduce churn with zero additional creator effort. Flagged to legal — cannot proceed without sign-off on behavioral data use.",
+    "createdAt": "2026-03-11T09:30:00.000Z"
+  },
+  {
+    "id": "mod-ct-8",
+    "name": "Team Posting with Attribution",
+    "status": "not_started",
+    "nextAction": "Define attribution model; confirm reader-facing display treatment for delegated posts",
+    "detail": "Allow creator teams to maintain community presence while preserving reader trust. Attribution is non-negotiable — posts by team members must be visibly labeled 'on behalf of [Creator]'. P1 capability. Attribution model must be resolved in design before any engineering begins — it is the load-bearing decision.",
+    "createdAt": "2026-03-11T09:35:00.000Z"
+  }
+]

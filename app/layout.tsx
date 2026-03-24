@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "./providers";
 import "./globals.css";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["800"],
-  variable: "--font-manrope",
-});
 
 export const metadata: Metadata = {
   title: "Design Tools",
@@ -20,9 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={manrope.variable} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <ThemeProvider>
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

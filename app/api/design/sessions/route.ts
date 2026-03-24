@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { insertNotification } from "@/lib/notifications";
-import { validateSessionCreate } from "@/app/lib/input-validation";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const validation = validateSessionCreate(body);
-  if (!validation.valid) {
-    return NextResponse.json(
-      { error: "Validation failed", details: validation.errors },
-      { status: 400 }
-    );
-  }
-  const { title, description, participantCount, options, previewUrl, creatorToken, problem, goal, audience, constraints } = body;
+  const { title, description, participantCount, options, previewUrl, creatorToken, topic, hypothesis, problem, goal, audience, constraints } = body;
 
   if (!title?.trim() || !creatorToken) {
     return NextResponse.json({ error: "Missing title or creatorToken" }, { status: 400 });
@@ -30,6 +22,8 @@ export async function POST(request: Request) {
       title: title.trim(),
       description: (description ?? "").trim(),
       preview_url: previewUrl?.trim() || null,
+      topic: topic?.trim() || null,
+      hypothesis: hypothesis?.trim() || null,
       problem: problem?.trim() || null,
       goal: goal?.trim() || null,
       audience: audience?.trim() || null,
@@ -72,9 +66,7 @@ export async function POST(request: Request) {
     sessionTitle: title.trim(),
     message: `New session "${title.trim()}" was created`,
     link: `/explorations/${session.id}`,
-  }).catch((err) => {
-    console.error('[Notification Error] Failed to create session notification:', err);
-  });
+  }).catch(() => {});
 
   return NextResponse.json({ id: session.id, creatorToken });
 }

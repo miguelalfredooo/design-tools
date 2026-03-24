@@ -8,11 +8,33 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ExplorationSession, Reaction, SpatialComment, MediaType } from "./design-types";
+import type {
+  ExplorationSession,
+  Reaction,
+  SpatialComment,
+  MediaType,
+  SessionValidation,
+} from "./design-types";
 import { sessionFromRow, reactionFromRow, spatialCommentFromRow } from "./design-types";
 import { generateUUID } from "./design-utils";
 import { supabase } from "./supabase";
 import { isAdminMode } from "@/hooks/use-admin";
+import {
+  getCreatorToken,
+  getCreatorTokens,
+  getVoterId,
+  setCreatorToken,
+} from "./design-session-auth";
+import {
+  fetchAllSessions as fetchAllSessionRows,
+  fetchCreatorSessions,
+} from "./design-session-queries";
+import {
+  mergeSessionValidation,
+  saveSessionValidation,
+  setValidationStateMap,
+  getValidationStateMap,
+} from "./session-validation-storage";
 import {
   apiCreateSession,
   apiGetSession,
@@ -32,41 +54,6 @@ import {
   apiDeleteSpatialComment,
   apiDeleteSpatialCommentAsCreator,
 } from "./design-api";
-
-// --- localStorage keys ---
-const CREATOR_TOKENS_KEY = "design-creator-tokens";
-const VOTER_ID_KEY = "design-voter-id";
-
-// --- Creator token management ---
-
-function getCreatorTokens(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(CREATOR_TOKENS_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-function setCreatorToken(sessionId: string, token: string) {
-  const tokens = getCreatorTokens();
-  tokens[sessionId] = token;
-  localStorage.setItem(CREATOR_TOKENS_KEY, JSON.stringify(tokens));
-}
-
-export function getCreatorToken(sessionId: string): string | null {
-  return getCreatorTokens()[sessionId] ?? null;
-}
-
-// --- Voter ID management ---
-
-export function getVoterId(): string {
-  let id = localStorage.getItem(VOTER_ID_KEY);
-  if (!id) {
-    id = generateUUID();
-    localStorage.setItem(VOTER_ID_KEY, id);
-  }
-  return id;
-}
 
 // --- Context types ---
 
@@ -92,7 +79,8 @@ interface SessionContextValue {
     participantCount: number,
     options: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string }[],
     previewUrl?: string,
-    brief?: { problem?: string; goal?: string; audience?: string; constraints?: string }
+    brief?: { topic?: string; hypothesis?: string; problem?: string; goal?: string; audience?: string; constraints?: string },
+    validation?: SessionValidation,
   ) => Promise<ExplorationSession>;
   /** Delete a session */
   deleteSession: (id: string) => Promise<void>;
@@ -151,9 +139,13 @@ interface SessionContextValue {
   ) => Promise<void>;
   /** Delete a spatial comment */
   deleteSpatialComment: (sessionId: string, optionId: string, commentId: string) => Promise<void>;
+  /** Update session validation metadata for prototype review */
+  updateSessionValidation: (sessionId: string, updates: Partial<SessionValidation>) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+
+export { getCreatorToken, getCreatorTokens, getVoterId, setCreatorToken };
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<ExplorationSession | null>(null);
@@ -170,7 +162,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const vid = getVoterId();
       const data = await apiGetSession(id, vid);
       setSession(
-        sessionFromRow(data.session, data.options, data.votes, data.voteCount)
+        mergeSessionValidation(
+          sessionFromRow(data.session, data.options, data.votes, data.voteCount)
+        )
       );
     } catch {
       setSession(null);
@@ -181,76 +175,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Load sessions created by this browser
   const loadMySessions = useCallback(async () => {
-    if (!supabase) return;
     setLoading(true);
     try {
-      const tokens = getCreatorTokens();
-      const tokenValues = Object.values(tokens);
-      if (tokenValues.length === 0) {
+      const creatorTokens = Object.values(getCreatorTokens());
+      if (creatorTokens.length === 0) {
         setMySessions([]);
-        setLoading(false);
-        return;
+      } else {
+        setMySessions(await fetchCreatorSessions(creatorTokens));
       }
-
-      const { data: sessions } = await supabase
-        .from("voting_sessions")
-        .select("*")
-        .in("creator_token", tokenValues)
-        .order("created_at", { ascending: false });
-
-      if (!sessions) {
-        setMySessions([]);
-        setLoading(false);
-        return;
-      }
-
-      const sessionIds = sessions.map((s) => s.id);
-
-      const revealedIds = sessions.filter((s) => s.phase === "revealed").map((s) => s.id);
-
-      const [optionsRes, allVotesRes, votesRes] = await Promise.all([
-        supabase
-          .from("voting_options")
-          .select("*")
-          .in("session_id", sessionIds)
-          .order("position"),
-        supabase
-          .from("voting_votes")
-          .select("session_id, voter_token")
-          .in("session_id", sessionIds),
-        revealedIds.length > 0
-          ? supabase
-              .from("voting_votes")
-              .select("*")
-              .in("session_id", revealedIds)
-          : Promise.resolve({ data: [] }),
-      ]);
-
-      const allOptions = optionsRes.data ?? [];
-      const allVotes = votesRes.data ?? [];
-      const allVotesForCounting = allVotesRes.data ?? [];
-
-      // Count distinct voters per session
-      const voteCounts = new Map<string, number>();
-      sessionIds.forEach((sid) => {
-        const distinctVoters = new Set(
-          allVotesForCounting
-            .filter((v) => v.session_id === sid)
-            .map((v) => v.voter_token)
-        );
-        voteCounts.set(sid, distinctVoters.size);
-      });
-
-      setMySessions(
-        sessions.map((s) =>
-          sessionFromRow(
-            s,
-            allOptions.filter((o) => o.session_id === s.id),
-            allVotes.filter((v) => v.session_id === s.id),
-            voteCounts.get(s.id) ?? 0
-          )
-        )
-      );
     } catch {
       setMySessions([]);
     } finally {
@@ -260,67 +192,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Load all sessions (for browse view)
   const loadAllSessions = useCallback(async () => {
-    if (!supabase) return;
     setLoading(true);
     try {
-      const { data: sessions } = await supabase
-        .from("voting_sessions")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!sessions) {
-        setAllSessions([]);
-        setLoading(false);
-        return;
-      }
-
-      const sessionIds = sessions.map((s) => s.id);
-
-      const revealedIds = sessions.filter((s) => s.phase === "revealed").map((s) => s.id);
-
-      const [optionsRes, allVotesRes, votesRes] = await Promise.all([
-        supabase
-          .from("voting_options")
-          .select("*")
-          .in("session_id", sessionIds)
-          .order("position"),
-        supabase
-          .from("voting_votes")
-          .select("session_id, voter_token")
-          .in("session_id", sessionIds),
-        revealedIds.length > 0
-          ? supabase
-              .from("voting_votes")
-              .select("*")
-              .in("session_id", revealedIds)
-          : Promise.resolve({ data: [] }),
-      ]);
-
-      const allOptions = optionsRes.data ?? [];
-      const allVotes = votesRes.data ?? [];
-      const allVotesForCounting = allVotesRes.data ?? [];
-
-      // Count distinct voters per session
-      const voteCounts = new Map<string, number>();
-      sessionIds.forEach((sid) => {
-        const distinctVoters = new Set(
-          allVotesForCounting
-            .filter((v) => v.session_id === sid)
-            .map((v) => v.voter_token)
-        );
-        voteCounts.set(sid, distinctVoters.size);
-      });
-
-      setAllSessions(
-        sessions.map((s) =>
-          sessionFromRow(
-            s,
-            allOptions.filter((o) => o.session_id === s.id),
-            allVotes.filter((v) => v.session_id === s.id),
-            voteCounts.get(s.id) ?? 0
-          )
-        )
-      );
+      setAllSessions(await fetchAllSessionRows());
     } catch {
       setAllSessions([]);
     } finally {
@@ -382,7 +256,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       participantCount: number,
       options: { title: string; description: string; mediaType?: MediaType; mediaUrl?: string; rationale?: string }[],
       previewUrl?: string,
-      brief?: { problem?: string; goal?: string; audience?: string; constraints?: string }
+      brief?: { topic?: string; hypothesis?: string; problem?: string; goal?: string; audience?: string; constraints?: string },
+      validation?: SessionValidation,
     ): Promise<ExplorationSession> => {
       const creatorToken = generateUUID();
       const result = await apiCreateSession({
@@ -396,6 +271,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       });
 
       setCreatorToken(result.id, creatorToken);
+      if (validation) saveSessionValidation(result.id, validation);
 
       // Fetch the created session to return it
       const data = await apiGetSession(result.id);
@@ -632,6 +508,34 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [loadSpatialComments]
   );
 
+  const updateSessionValidation = useCallback(
+    async (sessionId: string, updates: Partial<SessionValidation>) => {
+      const currentMap = getValidationStateMap();
+      const nextValidation: SessionValidation = {
+        state: currentMap[sessionId]?.state ?? "unverified",
+        ...currentMap[sessionId],
+        ...updates,
+      };
+      currentMap[sessionId] = nextValidation;
+      setValidationStateMap(currentMap);
+
+      setSession((prev) =>
+        prev?.id === sessionId ? { ...prev, validation: nextValidation } : prev
+      );
+      setMySessions((prev) =>
+        prev.map((item) =>
+          item.id === sessionId ? { ...item, validation: nextValidation } : item
+        )
+      );
+      setAllSessions((prev) =>
+        prev.map((item) =>
+          item.id === sessionId ? { ...item, validation: nextValidation } : item
+        )
+      );
+    },
+    []
+  );
+
   return (
     <SessionContext value={{
       session,
@@ -661,6 +565,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       loadSpatialComments,
       addSpatialComment,
       deleteSpatialComment,
+      updateSessionValidation,
     }}>
       {children}
     </SessionContext>
